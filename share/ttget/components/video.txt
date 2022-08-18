@@ -1,0 +1,1 @@
+<video class="video-post" preload="metadata" poster="VIDEO_THUMBNAIL" playsinline="true" x5-playsinline="true" webkit-playsinline="true" tabindex="2" muted loop mediatype="video"><source src="VIDEO_FILE" \/><\/video>

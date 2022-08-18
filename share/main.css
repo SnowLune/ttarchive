@@ -2,7 +2,7 @@
    margin: 0;
    padding: 0;
    box-sizing: border-box;
-   background-color: #1a1a1a;
+   background-color: #262626;
 }
 
 @import url("https://fonts.googleapis.com/css2?family=Finlandica&display=swap");
@@ -80,21 +80,6 @@ span.material-symbols-rounded {
    font-size: 2rem;
    color: #aaa;
    background-color: #000;
-}
-
-.home-icon {
-   position: absolute;
-   left: 5vw;
-}
-
-.home-icon a {
-   color: #aaa;
-   background-color: #000;
-}
-
-.refresh-icon {
-   position: absolute;
-   right: 5vw;
 }
 
 @media screen and (min-width: 600px) {

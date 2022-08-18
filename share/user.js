@@ -2,6 +2,13 @@ function mobileScroll() {
 
 }
 
+var toTop = document.querySelector(".back-to-top-icon a");
+
+toTop.addEventListener("click", (event) => {
+   event.preventDefault();
+   window.scroll({top: 0, left: 0, behavior: "smooth"});
+})
+
 var videoMain = document.querySelector(".video-main");
 var playingVideos = [];
 
@@ -26,7 +33,7 @@ videoMain.addEventListener("dblclick", (event) => {
    event.target.controls = true;
 });
 
-var scrollVal
+var scrollVal;
 document.addEventListener("scroll", (event) => {
    if (scrollVal) {
       if (window.scrollY < scrollVal) {

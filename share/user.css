@@ -11,6 +11,22 @@
    margin: 0px;
 }
 
+.home-icon {
+   position: absolute;
+   left: 5vw;
+}
+
+span.material-symbols-rounded a {
+   color: #aaa;
+   background-color: #000;
+}
+
+.back-to-top-icon {
+   position: absolute;
+   right: 5vw;
+}
+
+
 @media screen and (min-width: 600px) {
 
 }

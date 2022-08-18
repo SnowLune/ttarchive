@@ -6,7 +6,7 @@
 }
 
 .video-post {
-   height: 100vh;
+   height: calc(100vh - 3rem);
    width: 100vw;
    margin: 0px;
 }
@@ -17,7 +17,7 @@
 
 @media screen and (min-width: 768px) {
    .video-post {
-      height: 96vh;
+      height: calc(100vh - 3rem - 15px);
       width: inherit;
       margin: 5px;
    }

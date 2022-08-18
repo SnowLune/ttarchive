@@ -20,16 +20,36 @@ if [ ! -d "$ttgetShare" ]; then
    exit 1
 fi
 
-if [ -f "$1" ]; then
-   # Create User Dir
-   username=`ls "$1" | sed -e 's%^.*@%@%' -e 's%).*$%%'`
+if [ "$1" = "" ]; then
+   echo "ERROR: No input file or username provided."
+   exit 1
+fi
 
-   if [ "$username" = "" ]; then
-      echo "ERROR: Invalid input filename. Must contain @username."
+if [ ! -f "$1" ]; then
+   # Check for user directory
+   if [ -d "$ttgetHome"/"$1" ]; then
+      if [ -f "$ttgetHome"/"$1"/"$1".list ]; then
+         echo "Found URL list for $1"
+         inputFile="$ttgetHome"/"$1"/"$1".list
+      else
+         echo "ERROR: No URL list for $1 found."
+         echo "Please save a new HTML page for $1. Exiting..."
+         exit 1
+      fi
+   else
+      echo "ERROR: No user directory for $1 found."
+      echo "Please save a new HTML page for $1. Exiting..."
       exit 1
    fi
 else
-   echo "ERROR: No input file."
+   inputFile="$1"
+fi
+
+# Create User Dir
+username=`ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.list%%'`
+
+if [ "$username" = "" ]; then
+   echo "ERROR: Invalid input filename. Must contain @username."
    exit 1
 fi
 
@@ -48,7 +68,9 @@ else
    mkdir -p "$outputDir/video/h265"
 fi
 
-videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$1")
+videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
+videoListFile="$outputDir"/"$username".list
+echo $videoList | tr " " "\n" > "$videoListFile"
 
 # Create list of mp4s
 localVideoIDs=$(find "$outputDir"/video -maxdepth 1 -type f -iregex ".*.mp4")
@@ -66,13 +88,11 @@ for i in $localVideoIDs; do
 
       # Save videoList
       videoList=$tempVideoList
+      echo $videoList | tr " " "\n" > "$videoListFile".tmp
    fi
 done
 
 if [[ "$videoList" != "" ]]; then
-   videoListFile="$outputDir"/"$username".list
-   echo $videoList | tr " " "\n" > "$videoListFile"
-
    echo "Found $(echo $videoList | tr " " "\n" | wc -l) new \
       videos from $username"
    echo "Starting download..."
@@ -81,12 +101,12 @@ if [[ "$videoList" != "" ]]; then
    echo "Downloading h264 version of $currentID..."
    yt-dlp -f "b*[vcodec=h264]" --write-thumbnail --no-mtime --no-overwrites \
       -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
-      -a "$videoListFile"
+      -a "$videoListFile".tmp
 
    # Download h265
    echo "Downloading h265 version of $currentID..."
    yt-dlp --no-mtime --no-overwrites --sleep-interval 1 \
-      -P "$outputDir/video/h265" -a "$videoListFile"
+      -P "$outputDir/video/h265" -a "$videoListFile".tmp
 else
    echo "No new videos from $username"
 fi

@@ -32,7 +32,7 @@ if [ ! -f "$1" ]; then
          echo "Found URL list for $1"
          inputFile="$ttgetHome"/"$1"/"$1".list
       else
-         echo "ERROR: No URL list for $1 found."
+         echo "ERROR: Found user directory but no URL list for $1."
          echo "Please save a new HTML page for $1. Exiting..."
          exit 1
       fi
@@ -88,25 +88,26 @@ for i in $localVideoIDs; do
 
       # Save videoList
       videoList=$tempVideoList
-      echo $videoList | tr " " "\n" > "$videoListFile".tmp
    fi
 done
 
+echo $videoList | tr " " "\n" > "$videoListFile".tmp
+
 if [[ "$videoList" != "" ]]; then
-   echo "Found $(echo $videoList | tr " " "\n" | wc -l) new \
-      videos from $username"
+   echo -n "Found $(echo $videoList | tr " " "\n" | wc -l) new videos "
+   echo "from $username"
    echo "Starting download..."
 
    # Download h264
-   echo "Downloading h264 version of $currentID..."
-   yt-dlp -f "b*[vcodec=h264]" --write-thumbnail --no-mtime --no-overwrites \
+   echo "Downloading h264..."
+   yt-dlp -f "b*[vcodec=h264]" --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
       -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
       -a "$videoListFile".tmp
 
    # Download h265
-   echo "Downloading h265 version of $currentID..."
-   yt-dlp --no-mtime --no-overwrites --sleep-interval 1 \
-      -P "$outputDir/video/h265" -a "$videoListFile".tmp
+   # echo "Downloading h265..."
+   # yt-dlp -f "b*[vcodec=h265]"--no-mtime --no-overwrites --sleep-interval 1 \
+   #    -P "$outputDir/video/h265" -a "$videoListFile".tmp
 else
    echo "No new videos from $username"
 fi

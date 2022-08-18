@@ -61,21 +61,14 @@ else
    mkdir -p "$outputDir"
 fi
 
-# Make video dirs
-if [ -d "$outputDir"/video/h265 ]; then
-   echo "Found h265 video directory."
-else
-   mkdir -p "$outputDir/video/h265"
-fi
-
 videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
 videoListFile="$outputDir"/"$username".list
 echo $videoList | tr " " "\n" > "$videoListFile"
 
 # Create list of mp4s
-localVideoIDs=$(find "$outputDir"/video -maxdepth 1 -type f -iregex ".*.mp4")
+localVideoFiles=$(find "$outputDir"/video -maxdepth 1 -type f -iregex ".*.mp4")
 
-for i in $localVideoIDs; do 
+for i in $localVideoFiles; do 
    # Cut out ID
    currentID=$(basename -s .mp4 "$i")
    
@@ -93,14 +86,12 @@ done
 
 echo $videoList | tr " " "\n" > "$videoListFile".tmp
 
-if [[ "$videoList" != "" ]]; then
-   echo -n "Found $(echo $videoList | tr " " "\n" | wc -l) new videos "
+if [ "$videoList" != "" ]; then
+   echo -n "Found $(echo $videoList | tr " " "\n" | sed '/^$/d' | wc -l) new videos "
    echo "from $username"
    echo "Starting download..."
 
-   # Download h264
-   echo "Downloading h264..."
-   yt-dlp -f "b*[vcodec=h264]" --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
+   yt-dlp -f "b*[vcodec=h264]" --progress --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
       -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
       -a "$videoListFile".tmp
 
@@ -110,6 +101,36 @@ if [[ "$videoList" != "" ]]; then
    #    -P "$outputDir/video/h265" -a "$videoListFile".tmp
 else
    echo "No new videos from $username"
+fi
+
+# Check metadata
+echo "Validating metadata using primary video list..."
+
+function addToMissingMetadataList {
+   echo "$i" >> "$videoListFile".tmp
+}
+
+for i in $(cat "$videoListFile"); do
+   currentID=$(echo "$i" | sed "s%^.*/%%")
+   # Check for missing metadata
+   if [ ! -f "$outputDir"/video/"$currentID".description ]; then
+      addToMissingMetadataList
+   elif [ ! -f "$outputDir"/video/"$currentID".info.json ]; then
+      addToMissingMetadataList
+   elif [ ! -f "$outputDir"/video/"$currentID".webp ]; then
+      addToMissingMetadataList
+   fi
+done
+
+if [ "$(cat "$videoListFile".tmp)" != "" ]; then
+   missingCount=$(cat "$videoListFile".tmp | sed '/^$/d' |  wc -l)
+   echo "Missing metadata for $missingCount video$([ "$missingCount" -gt 1 ] && echo "s")."
+   echo "Downloading missing metadata..."
+   yt-dlp --skip-download --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
+      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.1 \
+      -a "$videoListFile".tmp
+else
+   echo "Successfully validated video metadata."
 fi
 
 # Generate homepage

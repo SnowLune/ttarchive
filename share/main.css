@@ -2,7 +2,6 @@
    margin: 0;
    padding: 0;
    box-sizing: border-box;
-   background-color: #262626;
 }
 
 @import url("https://fonts.googleapis.com/css2?family=Finlandica&display=swap");
@@ -22,6 +21,7 @@
 
 .home {
    flex-direction: row;
+   background-color: #262626;
 }
 
 .user-link {

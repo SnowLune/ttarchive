@@ -3,6 +3,7 @@
    justify-content: center;
    align-items: center;
    flex-wrap: wrap;
+   background-color: #262626;
 }
 
 .video-post {
@@ -22,11 +23,17 @@ span.material-symbols-rounded a {
    background-color: #000;
 }
 
-.back-to-top-icon {
+.controls {
    position: absolute;
    right: 5vw;
+   display: flex;
+   justify-content: center;
+   align-items: center;
 }
 
+.controls .material-symbols-rounded {
+   margin: 0 5px;
+}
 
 @media screen and (min-width: 600px) {
 

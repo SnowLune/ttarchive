@@ -1,5 +1,34 @@
-function mobileScroll() {
+const MOBILE_BREAK = 600;
 
+var videoCollection = document.getElementsByClassName("video-post");
+console.log(videoCollection);
+
+function togglePlay(video) {
+   if (video.paused) {
+      for (let i = 0; i < videoCollection.length; i++) {
+         if (videoCollection[i].paused === false)
+            videoCollection[i].pause();
+      }
+      video.play();
+   } else video.pause();
+}
+
+function mobileScroll(videos, scrollTimeout) {
+   let viewportHeight = window.innerHeight;
+   for (let i = 0; i < videos.length; i++) {
+      if (Math.abs(videos[i].offsetTop - window.scrollY) < viewportHeight / 2) {
+         videos[i].scrollIntoView({ behavior: "smooth", block: "end" });
+         if (window.innerWidth < (videos[i].clientWidth * 2) && videos[i].paused)
+            setTimeout(() => togglePlay(videos[i]), 250);
+         break;
+      }
+      // else if (Math.abs(videos[i].offsetTop - window.scrollY) >= viewportHeight / 2 ) {
+      //    let nextVideo = i + 1
+      //    videos[`${nextVideo}`].scrollIntoView({ behavior: "smooth", block: "end" });
+      //    console.log("next")
+      //    break;
+      // }
+   }
 }
 
 var toTop = document.querySelector(".to-top-icon a");
@@ -16,16 +45,12 @@ toBottom.addEventListener("click", (event) => {
 });
 
 var videoMain = document.querySelector(".video-main");
-var playingVideos = [];
 
 videoMain.addEventListener("click", (event) => {
    if (event.target.paused) {
       event.target.scrollIntoView({ behavior: "smooth", block: "end" });
-      playingVideos.forEach((video) => video.pause());
-      playingVideos = [];
-      event.target.play();
-      playingVideos.push(event.target);
-   } else event.target.pause();
+   }
+   togglePlay(event.target);
 });
 
 videoMain.addEventListener("dblclick", (event) => {
@@ -34,19 +59,14 @@ videoMain.addEventListener("dblclick", (event) => {
    event.target.controls = true;
 });
 
-var scrollVal;
+let scrollT;
+videoMain.addEventListener("touchend", (event) => {
+   clearTimeout(scrollT);
+   scrollT = setTimeout(() => mobileScroll(videoCollection, scrollT), 50);
+})
+
+let scrollD;
 document.addEventListener("scroll", (event) => {
-   if (scrollVal) {
-      // Scroll Up
-      if (window.scrollY < scrollVal) {
-         scrollVal = window.scrollY;
-      }
-      // Scroll Down
-      else if (window.scrollY > scrollVal) {
-         scrollVal = window.scrollY;
-      }
-   }
-   else {
-      scrollVal = window.scrollY;
-   }
+   clearTimeout(scrollD);
+   scrollD = setTimeout(() => mobileScroll(videoCollection, scrollD), 100);
 })

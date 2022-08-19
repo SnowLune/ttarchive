@@ -57,8 +57,12 @@ outputDir="$ttgetHome"/"$username"
 
 if [ -d "$outputDir" ]; then
    echo "Found user file for $username."
+   if [ ! -d "$outputDir"/video ]; then
+      echo "No video directory found. Creating one..."
+      mkdir -p "$outputDir"/video
+   fi
 else
-   mkdir -p "$outputDir"
+   mkdir -p "$outputDir"/video
 fi
 
 videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
@@ -142,7 +146,6 @@ cp -u  $ttgetShare/main.css "$ttgetHome"/assets
 cp -u  $ttgetShare/user.css "$ttgetHome"/assets
 cp -u $ttgetShare/home.js "$ttgetHome"/assets
 cp -u $ttgetShare/user.js "$ttgetHome"/assets
-cp -ur "$ttgetShare"/icons "$ttgetHome"/assets
 
 userLinkComponent=$(cat $ttgetShare/components/user-link.html | tr -d "\n")
 userThumbComponent=$(cat $ttgetShare/components/user-preview-image.html \

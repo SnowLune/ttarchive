@@ -22,12 +22,6 @@ function mobileScroll(videos, scrollTimeout) {
             setTimeout(() => togglePlay(videos[i]), 250);
          break;
       }
-      // else if (Math.abs(videos[i].offsetTop - window.scrollY) >= viewportHeight / 2 ) {
-      //    let nextVideo = i + 1
-      //    videos[`${nextVideo}`].scrollIntoView({ behavior: "smooth", block: "end" });
-      //    console.log("next")
-      //    break;
-      // }
    }
 }
 

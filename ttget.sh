@@ -165,6 +165,8 @@ for i in "$ttgetHome"/@*; do
       | tail -9)
    for j in {1..9}; do
       previewThumb=$(echo $thumbnails | tr " " "\n" | sed -n "$j"p)
+      if [ "$previewThumb" = "" ]; then break; fi
+      
       tempUserThumbElements=$userThumbElements
       newUserThumbElement=$(echo "$userThumbComponent" | sed "s#THUMBNAIL_URI#./$currentUsername/$previewThumb#")
       userThumbElements="$newUserThumbElement""$tempUserThumbElements"

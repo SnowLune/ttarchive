@@ -13,11 +13,13 @@ function togglePlay(video) {
    } else video.pause();
 }
 
-function mobileScroll(videos, scrollTimeout) {
-   let viewportHeight = window.innerHeight;
+function mobileScroll(videos) {
+   let halfScreen = window.innerHeight / 2;
+
    for (let i = 0; i < videos.length; i++) {
-      if (Math.abs(videos[i].offsetTop - window.scrollY) < viewportHeight / 2) {
+      if (Math.abs(videos[i].offsetTop - window.scrollY) < halfScreen) {
          videos[i].scrollIntoView({ behavior: "smooth", block: "end" });
+         
          if (window.innerWidth < (videos[i].clientWidth * 2) && videos[i].paused)
             setTimeout(() => togglePlay(videos[i]), 250);
          break;
@@ -35,12 +37,20 @@ toTop.addEventListener("click", (event) => {
 
 toBottom.addEventListener("click", (event) => {
    event.preventDefault();
-   window.scroll({top: document.body.scrollHeight, left: 0, behavior: "smooth"});
+   window.scroll(
+      {
+         top: document.body.scrollHeight, left: 0, 
+         behavior: "smooth"
+      }
+   );
 });
 
 var videoMain = document.querySelector(".video-main");
 
 videoMain.addEventListener("click", (event) => {
+   // Return if row size is 1 video
+   // if (window.innerWidth < (videos[i].clientWidth * 2))
+   //    return;
    if (event.target.paused) {
       event.target.scrollIntoView({ behavior: "smooth", block: "end" });
    }
@@ -50,17 +60,26 @@ videoMain.addEventListener("click", (event) => {
 videoMain.addEventListener("dblclick", (event) => {
    event.target.requestFullscreen();
    event.target.play();
-   event.target.controls = true;
+   event.target.controls ? event.target.controls = false 
+      : event.target.controls = true;
 });
 
-let scrollT;
-videoMain.addEventListener("touchend", (event) => {
-   clearTimeout(scrollT);
-   scrollT = setTimeout(() => mobileScroll(videoCollection, scrollT), 50);
+let fingerHeld = false;
+videoMain.addEventListener("touchstart", () => {
+   fingerHeld = true;
+})
+
+videoMain.addEventListener("touchend", () => {
+   fingerHeld = false;
+   mobileScroll(videoCollection);
 })
 
 let scrollD;
 document.addEventListener("scroll", (event) => {
+   // console.log(window.scrollY);
+   if (fingerHeld)
+      return;
+
    clearTimeout(scrollD);
-   scrollD = setTimeout(() => mobileScroll(videoCollection, scrollD), 100);
+   scrollD = setTimeout(() => mobileScroll(videoCollection, scrollD), 50);
 })

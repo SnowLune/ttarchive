@@ -85,6 +85,7 @@ a {
 
 .user-gallery-preview {
    flex-direction: column;
+   margin-top: 8px;
 }
 
 span.material-symbols-rounded {

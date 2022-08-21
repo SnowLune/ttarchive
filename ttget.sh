@@ -226,4 +226,9 @@ if [ -f "$ttgetHome"/index.html ]; then
    echo "Generated ttget home page: $ttgetHome/index.html"
 fi
 
+# Delete temp file
+if [ -f "$videoListFile".tmp ]; then
+   rm "$videoListFile".tmp
+fi
+
 exit

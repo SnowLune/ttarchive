@@ -5,8 +5,7 @@ var fingerHeld;
 
 var scrollTimeout;
 
-var videoCollection = document.getElementsByClassName("video-post");
-console.log(videoCollection);
+const videoCollection = document.getElementsByClassName("video-post");
 
 function togglePlay(video) {
    if (video.paused) {
@@ -20,6 +19,22 @@ function togglePlay(video) {
 function alignedToVideo() {
 }
 
+// Get the index of the video closest to the top of the viewport 
+function getNearestVideo() {
+   var nearestVideoDistance = 10 ** 10;
+   var nearestVideo;
+
+   for (var i = 0; i < videoCollection.length; i++) {
+      let videoTopDistance = Math.abs(videoCollection[i].offsetTop - videoMain.scrollTop);
+      if (videoTopDistance < nearestVideoDistance) {
+         nearestVideoDistance = videoTopDistance;
+         nearestVideo = i;
+      }
+   }
+
+   return nearestVideo;
+}
+
 function scrollVideo(videoEl) {
    videoEl.scrollIntoView({ behavior: "smooth", block: "end" })
 }
@@ -29,7 +44,6 @@ function mobileScroll(videos) {
 
    for (let i = 0; i < videos.length; i++) {
       var videoTopDistance = Math.abs(videos[i].offsetTop - videoMain.scrollTop)
-      console.log(videoTopDistance)
       
       if (videoTopDistance <= halfScreen) {
          scrollVideo(videos[i]);
@@ -39,13 +53,15 @@ function mobileScroll(videos) {
          break;
       }
    }
+
+   console.log(getNearestVideo())
 }
 
 function scrollHandler() {
    if (fingerHeld || scrolling) return;
 
    clearTimeout(scrollTimeout);
-   scrollTimeout = setTimeout(() => mobileScroll(videoCollection), 50)
+   scrollTimeout = setTimeout(() => mobileScroll(videoCollection), 50);
 }
 
 var toTop_el = document.querySelector(".to-top-icon a");

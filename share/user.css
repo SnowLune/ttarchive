@@ -43,7 +43,6 @@ span.material-symbols-rounded a {
 
 @media screen and (min-width: 768px) {
    .video-post {
-      height: calc(100vh - 3rem - 20px);
       width: inherit;
       margin: 5px;
    }

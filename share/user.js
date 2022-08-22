@@ -1,11 +1,13 @@
-const MOBILE_BREAK = 600;
+// Constants
+const videoCollection = document.getElementsByClassName("video-post");
 
-var scrolling;
+// Globals
 var fingerHeld;
 
-var scrollTimeout;
-
-const videoCollection = document.getElementsByClassName("video-post");
+// Global Elements
+var videoMainEl = document.querySelector(".video-main");
+var toTopEl = document.querySelector(".to-top-icon a");
+var toBottomEl = document.querySelector(".to-bottom-icon a");
 
 function togglePlay(video) {
    if (video.paused) {
@@ -16,98 +18,139 @@ function togglePlay(video) {
    } else video.pause();
 }
 
-function alignedToVideo() {
-}
-
-// Get the index of the video closest to the top of the viewport 
-function getNearestVideo() {
+// Get the index of the video closest to the top of the viewport
+function getNearestVideoIndex(opts = { direction: "down" }) {
    var nearestVideoDistance = 10 ** 10;
    var nearestVideo;
 
-   for (var i = 0; i < videoCollection.length; i++) {
-      let videoTopDistance = Math.abs(videoCollection[i].offsetTop - videoMain.scrollTop);
-      if (videoTopDistance < nearestVideoDistance) {
-         nearestVideoDistance = videoTopDistance;
-         nearestVideo = i;
+   if (opts.direction === "up") {
+      for (var i = videoCollection.length - 1; i >= 0; i--) {
+         let videoTopDistance = getVideoTopDistance(videoCollection[i]);
+
+         if (videoTopDistance < nearestVideoDistance) {
+            nearestVideoDistance = videoTopDistance;
+            nearestVideo = i;
+         }
+      }
+   } else {
+      for (var i = 0; i < videoCollection.length; i++) {
+         let videoTopDistance = getVideoTopDistance(videoCollection[i]);
+         if (videoTopDistance < nearestVideoDistance) {
+            nearestVideoDistance = videoTopDistance;
+            nearestVideo = i;
+         }
       }
    }
 
    return nearestVideo;
 }
 
+function getVideoTopDistance(video) {
+   let videoTopDistance = Math.abs(video.offsetTop - videoMainEl.scrollTop);
+   return videoTopDistance;
+}
+
 function scrollVideo(videoEl) {
-   videoEl.scrollIntoView({ behavior: "smooth", block: "end" })
+   videoEl.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function isMobile(video) {
+   if (window.innerWidth < video.clientWidth * 2) return true;
+   else return false;
 }
 
 function mobileScroll(videos) {
-   let halfScreen = videoMain.clientHeight / 2;
+   let halfScreen = videoMainEl.clientHeight / 2;
 
    for (let i = 0; i < videos.length; i++) {
-      var videoTopDistance = Math.abs(videos[i].offsetTop - videoMain.scrollTop)
-      
+      var videoTopDistance = getVideoTopDistance(videos[i]);
+
       if (videoTopDistance <= halfScreen) {
          scrollVideo(videos[i]);
 
-         if (window.innerWidth < videos[i].clientWidth * 2 && videos[i].paused)
-            setTimeout(() => togglePlay(videos[i]), 250);
+         if (isMobile(videos[i]) && videos[i].paused)
+            setTimeout(() => togglePlay(videos[i]), 200);
          break;
       }
    }
-
-   console.log(getNearestVideo())
 }
 
-function scrollHandler() {
-   if (fingerHeld || scrolling) return;
+function keyHandler(event) {
+   event.preventDefault();
 
-   clearTimeout(scrollTimeout);
-   scrollTimeout = setTimeout(() => mobileScroll(videoCollection), 50);
+   let nearestVideo;
+
+   if (
+      (event.key === "j" || event.key === "ArrowDown") &&
+      getNearestVideoIndex({ direction: "up" }) != videoCollection.length - 1
+   ) {
+      nearestVideo =
+         videoCollection[`${getNearestVideoIndex({ direction: "up" }) + 1}`];
+      scrollVideo(nearestVideo);
+   } else if (
+      (event.key === "k" || event.key === "ArrowUp") &&
+      getNearestVideoIndex() > 0
+   ) {
+      nearestVideo = videoCollection[`${getNearestVideoIndex() - 1}`];
+      scrollVideo(nearestVideo);
+   } else if (event.key === " ") {
+      nearestVideo = videoCollection[`${getNearestVideoIndex()}`];
+      if (isMobile(nearestVideo)) {
+         togglePlay(nearestVideo);
+         return;
+      }
+   } else return;
+
+   // We scrolled with keys to get here
+   if (isMobile(nearestVideo) && nearestVideo.paused)
+      setTimeout(() => togglePlay(nearestVideo), 200);
 }
 
-var toTop_el = document.querySelector(".to-top-icon a");
-var toBottom_el = document.querySelector(".to-bottom-icon a");
-
-toTop_el.addEventListener("click", (event) => {
+function toTopHandler(event) {
    event.preventDefault();
-   videoMain.scroll({ top: 0, left: 0, behavior: "smooth" });
-});
+   videoMainEl.scroll({ top: 0, left: 0, behavior: "smooth" });
+}
 
-toBottom_el.addEventListener("click", (event) => {
+function toBottomHandler(event) {
    event.preventDefault();
-   videoMain.scroll({
-      top: videoMain.scrollHeight,
+   videoMainEl.scroll({
+      top: videoMainEl.scrollHeight,
       left: 0,
       behavior: "smooth",
    });
-});
+}
 
-var videoMain = document.querySelector(".video-main");
+function clickHandler(event) {
+   // Play/Pause
+   if (event.target.tagName !== "VIDEO") return;
 
-videoMain.addEventListener("click", (event) => {
-   // Return if row size is 1 video
-   // if (window.innerWidth < (videos[i].clientWidth * 2))
-   //    return;
    if (event.target.paused) {
-      scrollVideo(event.target)
+      scrollVideo(event.target);
    }
    togglePlay(event.target);
-});
+}
 
-videoMain.addEventListener("dblclick", (event) => {
+function doubleClickHandler(event) {
    event.target.requestFullscreen();
    event.target.play();
-   event.target.controls
-      ? (event.target.controls = false)
-      : (event.target.controls = true);
-});
+   if (event.target.controls) event.target.controls = false;
+   else event.target.controls = true;
+}
 
-videoMain.addEventListener("touchstart", () => {
-   fingerHeld = true;
-});
+function touchHandler(event) {
+   if (event.type === "touchstart") fingerHeld = true;
+   else if (event.type === "touchend") {
+      fingerHeld = false;
+      mobileScroll(videoCollection);
+   }
+}
 
-videoMain.addEventListener("touchend", () => {
-   fingerHeld = false;
-   mobileScroll(videoCollection);
-});
+toTopEl.addEventListener("click", toTopHandler);
+toBottomEl.addEventListener("click", toBottomHandler);
 
-videoMain.addEventListener("scroll", scrollHandler);
+videoMainEl.addEventListener("click", clickHandler);
+videoMainEl.addEventListener("dblclick", doubleClickHandler);
+videoMainEl.addEventListener("touchstart", touchHandler);
+videoMainEl.addEventListener("touchend", touchHandler);
+
+document.addEventListener("keydown", keyHandler);

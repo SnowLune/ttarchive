@@ -96,7 +96,7 @@ if [ "$videoList" != "" ]; then
    echo "Starting download..."
 
    yt-dlp -f "b*[vcodec=h264]" --progress --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
-      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
+      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.25 \
       -a "$videoListFile".tmp
 
    # Download h265
@@ -109,12 +109,14 @@ fi
 
 # Check metadata
 echo "Validating metadata using primary video list..."
+# Overwrite temp file
+echo -n "" > "$videoListFile".tmp
 
 function addToMissingMetadataList {
    echo "$i" >> "$videoListFile".tmp
 }
 
-for i in $(cat "$videoListFile"); do
+for i in $(cat "$videoListFile" | sed '/^$/d'); do
    currentID=$(echo "$i" | sed "s%^.*/%%")
    # Check for missing metadata
    if [ ! -f "$outputDir"/video/"$currentID".description ]; then
@@ -192,12 +194,10 @@ for i in "$ttgetHome"/@*; do
    # Generate <video> elements
    echo "Generating html for $currentUsername..."
    cd "$ttgetHome"/"$currentUsername"/video
-   videoElements=""
+
    for i in *.mp4; do
       # Thumbnail file
       thumbnail=$(echo $i | sed 's#mp4#webp#')
-
-      tempVideoElements=$videoElements
 
       # If the thumbnail doesn't exist preload the video
       if [ -f "$thumbnail" ]; then
@@ -209,11 +209,11 @@ for i in "$ttgetHome"/@*; do
             | sed -e "s%VIDEO_FILE%./video/$i%" \
             -e "s%VIDEO_THUMBNAIL%%" -e "s%preload=\"none\"%preload=\"metadata\"%")
       fi
-      videoElements="$newVideoElement""$tempVideoElements"
+      sed -i "s%VIDEO_MAIN_ELEMENTS%VIDEO_MAIN_ELEMENTS$newVideoElement%g" "$ttgetHome"/"$currentUsername"/index.html
    done
 
    sed -i "s%USERNAME%$currentUsername%g" "$ttgetHome"/"$currentUsername"/index.html
-   sed -i "s%VIDEO_MAIN_ELEMENTS%$videoElements%g" "$ttgetHome"/"$currentUsername"/index.html
+   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttgetHome"/"$currentUsername"/index.html
 
    if [ -f "$outputDir"/index.html ]; then
       echo "Generated html page for $currentUsername: $ttgetHome/$currentUsername/index.html"

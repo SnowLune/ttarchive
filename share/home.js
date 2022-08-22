@@ -1,3 +1,5 @@
+var homeEl = document.querySelector(".home");
+
 function saveScroll(el) {
    window.localStorage.setItem("scroll", JSON.stringify(el.scrollTop));
 }
@@ -9,17 +11,13 @@ function getScroll(el) {
    }
 }
 
-var home = document.querySelector(".home");
-
-
-home.addEventListener("click", (event) => {
-   console.dir(event.target);
+homeEl.addEventListener("click", (event) => {
 });
 
-home.addEventListener("scroll", (event) => {
+homeEl.addEventListener("scroll", (event) => {
    saveScroll(event.target);
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-   getScroll(home);
+   getScroll(homeEl);
 })

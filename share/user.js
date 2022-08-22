@@ -14,6 +14,9 @@ function togglePlay(video) {
       for (let i = 0; i < videoCollection.length; i++) {
          if (videoCollection[i].paused === false) videoCollection[i].pause();
       }
+
+      // Load if not loaded before playing so we don't get a black flickering
+      if (video.duration === NaN) video.load();
       video.play();
    } else video.pause();
 }
@@ -99,9 +102,17 @@ function keyHandler(event) {
          togglePlay(nearestVideo);
          return;
       }
+   } else if (event.key === "Home") {
+      nearestVideo = videoCollection[0];
+      scrollVideo(nearestVideo);
+   } else if (event.key === "End") {
+      nearestVideo = videoCollection[`${videoCollection.length - 1}`];
+      scrollVideo(nearestVideo);
    } else return;
 
    // We scrolled with keys to get here
+   if (!nearestVideo)
+      nearestVideo = videoCollection[`${ getNearestVideoIndex() }`];
    if (isMobile(nearestVideo) && nearestVideo.paused)
       setTimeout(() => togglePlay(nearestVideo), 200);
 }

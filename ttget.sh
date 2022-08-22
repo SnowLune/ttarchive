@@ -96,7 +96,7 @@ if [ "$videoList" != "" ]; then
    echo "Starting download..."
 
    yt-dlp -f "b*[vcodec=h264]" --progress --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
-      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.25 \
+      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.5 \
       -a "$videoListFile".tmp
 
    # Download h265
@@ -203,7 +203,8 @@ for i in "$ttgetHome"/@*; do
       if [ -f "$thumbnail" ]; then
          newVideoElement=$(echo "$videoComponent" \
             | sed -e "s%VIDEO_FILE%./video/$i%" \
-            -e "s%VIDEO_THUMBNAIL%./video/$thumbnail%")
+            -e "s%VIDEO_THUMBNAIL%./video/$thumbnail%" \
+            -e "s%BACKGROUND_THUMBNAIL%./video/$thumbnail%")
       else
          newVideoElement=$(echo "$videoComponent" \
             | sed -e "s%VIDEO_FILE%./video/$i%" \

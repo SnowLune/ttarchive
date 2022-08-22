@@ -45,10 +45,11 @@ else
    inputFile="$1"
 fi
 
-# Create User Dir
+# Set username
 username=`ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.list%%'`
 
-if [ "$username" = "" ]; then
+# Check if filename gave us a valid username
+if [ "$username" = "" ] || [ "${username:0:1}" != "@" ]; then
    echo "ERROR: Invalid input filename. Must contain @username."
    exit 1
 fi
@@ -99,10 +100,6 @@ if [ "$videoList" != "" ]; then
       -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.5 \
       -a "$videoListFile".tmp
 
-   # Download h265
-   # echo "Downloading h265..."
-   # yt-dlp -f "b*[vcodec=h265]"--no-mtime --no-overwrites --sleep-interval 1 \
-   #    -P "$outputDir/video/h265" -a "$videoListFile".tmp
 else
    echo "No new videos from $username"
 fi
@@ -139,16 +136,24 @@ else
    echo "Successfully validated video metadata."
 fi
 
+####################
 # Generate homepage
+####################
 
-# Copy and make directories and files
+# Make directories and copy files
+
+if [ ! -d "$ttgetHome" ]; then
+   mkdir "$ttgetHome"
+fi
+
+if [ ! -d "$ttgetHome"/assets ]; then
+   mkdir "$ttgetHome"/assets
+fi
+
 cp "$ttgetShare"/home.html "$ttgetHome"/index.html
-mkdir -p "$ttgetHome"/assets
-cp -u  $ttgetShare/main.css "$ttgetHome"/assets
-cp -u  $ttgetShare/user.css "$ttgetHome"/assets
-cp -u $ttgetShare/home.js "$ttgetHome"/assets
-cp -u $ttgetShare/user.js "$ttgetHome"/assets
+cp -ur "$ttgetShare"/assets "$ttgetHome"
 
+# Set user link components
 userLinkComponent=$(cat $ttgetShare/components/user-link.html | tr -d "\n")
 userThumbComponent=$(cat $ttgetShare/components/user-preview-image.html \
    | tr -d "\n")
@@ -156,6 +161,7 @@ userThumbRowComponent=$(cat \
    $ttgetShare/components/user-gallery-preview-row.html | tr -d "\n")
 userLinkElements=""
 
+### Loop through all user directories
 for i in "$ttgetHome"/@*; do
    currentUsername=$(basename "$i")
 

@@ -97,7 +97,7 @@ if [ "$videoList" != "" ]; then
    echo "Starting download..."
 
    yt-dlp -f "b*[vcodec=h264]" --progress --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
-      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.5 \
+      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
       -a "$videoListFile".tmp
 
 else
@@ -193,7 +193,7 @@ for i in "$ttgetHome"/@*; do
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
    # Create HTML for user
-   cp $ttgetShare/user.html "$ttgetHome"/"$currentUsername"/index.html
+   cp "$ttgetShare"/user.html "$ttgetHome"/"$currentUsername"/index.html
 
    videoComponent=$(cat $ttgetShare/components/video.html | tr -d "\n")
 
@@ -215,30 +215,18 @@ for i in "$ttgetHome"/@*; do
       
       videoObject="{ id: \"$currentID\", 
             file: \"./video/"$i"\", 
-            description: \""description"\",
-            thumbnail: \"./video/"$thumbnail"\" },"
+            description: \"unavailable\",
+            thumbnail: \"./video/"$thumbnail"\",
+            username: \"$currentUsername\" },"
 
       sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttgetHome"/"$currentUsername"/index.html
-
-      # # If the thumbnail doesn't exist preload the video
-      # if [ -f "$thumbnail" ]; then
-      #    newVideoElement=$(echo "$videoComponent" \
-      #       | sed -e "s%VIDEO_FILE%./video/$i%" \
-      #       -e "s%VIDEO_THUMBNAIL%./video/$thumbnail%" \
-      #       -e "s%BACKGROUND_THUMBNAIL%./video/$thumbnail%")
-      # else
-      #    newVideoElement=$(echo "$videoComponent" \
-      #       | sed -e "s%VIDEO_FILE%./video/$i%" \
-      #       -e "s%VIDEO_THUMBNAIL%%" -e "s%preload=\"none\"%preload=\"metadata\"%")
-      # fi
-      # sed -i "s%VIDEO_MAIN_ELEMENTS%VIDEO_MAIN_ELEMENTS$newVideoElement%g" "$ttgetHome"/"$currentUsername"/index.html
    done
 
    sed -i "s%USERNAME%$currentUsername%g" "$ttgetHome"/"$currentUsername"/index.html
    sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttgetHome"/"$currentUsername"/index.html
    sed -i "s%VIDEO_OBJECTS%%g" "$ttgetHome"/"$currentUsername"/index.html
 
-   if [ -f "$outputDir"/index.html ]; then
+   if [ -f "$ttgetHome"/"$currentUsername"/index.html ]; then
       echo "Generated html page for $currentUsername: $ttgetHome/$currentUsername/index.html"
    fi
 done

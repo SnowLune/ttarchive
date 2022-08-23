@@ -6,6 +6,7 @@
    background-color: #262626;
    height: calc(100vh - var(--title-bar-height));
    overflow-y: scroll;
+   scroll-snap-type: y mandatory;
 }
 
 .video-post {
@@ -13,6 +14,8 @@
    width: 100vw;
    margin: 0px;
    background-color: #000;
+   scroll-snap-align: center;
+   scroll-snap-stop: always;
 }
 
 .home-icon {
@@ -50,6 +53,21 @@ span.material-symbols-rounded a {
    margin: 0;
 }
 
+.pseudofullscreen {
+   position: fixed;
+   top: 0;
+   width: 100vw;
+   height: 100vh;
+}
+
+.favorite {
+   color: red;
+}
+
+/* .no-scroll {
+   overflow-y: hidden;
+} */
+
 @media screen and (min-width: 600px) {
 }
 
@@ -57,6 +75,11 @@ span.material-symbols-rounded a {
    .video-post {
       width: inherit;
       margin: 5px;
+   }
+
+   .pseudofullscreen {
+      width: 100vw;
+      margin: 0;
    }
 }
 

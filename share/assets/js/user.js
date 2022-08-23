@@ -1,5 +1,6 @@
 // Globals
-var fingerHeld;
+var touchStartY;
+var touchEndY;
 var videoCollection;
 
 // Global Elements
@@ -8,6 +9,8 @@ var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
 var toTopEl = document.querySelector(".to-top-icon a");
 var toBottomEl = document.querySelector(".to-bottom-icon a");
+var faveEl = document.querySelector(".favorite-icon a");
+var hideEl = document.querySelector(".hide-icon a");
 
 function createLoader() {
    let loader = document.createElement("h3");
@@ -17,8 +20,19 @@ function createLoader() {
 
 function createVideoElement(videoObject) {
    return new Promise((resolve) => {
+      // Get favorites and hidden from storage
+      let favorites = JSON.parse(window.localStorage.getItem("favorites"));
+
+      // Create <video> element
+      // Set class names
       let videoEl = document.createElement("video");
       videoEl.className = "video-post";
+
+      if (favorites && favorites.includes(videoObject)) {
+         videoEl.classList.add("favorite");
+      }
+
+
       if (videoObject.description) videoEl.setAttribute("preload", "none");
       else videoEl.setAttribute("preload", "metadata");
 
@@ -36,7 +50,9 @@ function createVideoElement(videoObject) {
             ; background-position: center\
             ; background-size: contain`
       );
+      videoEl.setAttribute("data-id", videoObject.id);
       videoEl.setAttribute("src", videoObject.file);
+      // videoEl.controlsList.add("nofullscreen");
       videoMainEl.appendChild(videoEl);
 
       setTimeout(resolve, 0.01);
@@ -106,6 +122,10 @@ function getVideoTopDistance(video) {
    return videoTopDistance;
 }
 
+function getNearestVideo(videos, offset = 0) {
+   return videos[`${getNearestVideoIndex() + offset}`];
+}
+
 function scrollVideo(videoEl) {
    videoEl.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -115,19 +135,26 @@ function isMobile(video) {
    else return false;
 }
 
-function mobileScroll(videos) {
-   let halfScreen = videoMainEl.clientHeight / 2;
+function mobileScroll(videos, scrollStart, scrollStop) {
+   let nearestVideo = getNearestVideo(videos);
 
-   for (let i = 0; i < videos.length; i++) {
-      var videoTopDistance = getVideoTopDistance(videos[i]);
+   if (!isMobile(nearestVideo)) {
+      return;
+   }
 
-      if (videoTopDistance <= halfScreen) {
-         scrollVideo(videos[i]);
+   if (scrollStart && scrollStop) {
+      let scrollDiff = scrollStop - scrollStart;
+      console.log(scrollDiff);
 
-         if (isMobile(videos[i]) && videos[i].paused)
-            setTimeout(() => togglePlay(videos[i]), 200);
-         break;
+      if (scrollDiff === 0) return;
+      else if (scrollDiff > 0) {
+         nearestVideo = nearestVideo.nextElementSibling;
+      } else if (scrollDiff < 0) {
+         nearestVideo = nearestVideo.previousElementSibling;
       }
+
+      scrollVideo(nearestVideo);
+      if (nearestVideo.paused) setTimeout(() => togglePlay(nearestVideo), 200);
    }
 }
 
@@ -184,6 +211,39 @@ function toBottomHandler(event) {
    });
 }
 
+function favoriteHandler(event) {
+   event.preventDefault();
+   nearestVideo = getNearestVideo(videoCollection);
+   id = nearestVideo.getAttribute("data-id");
+   let video;
+
+   for (let i = 0; i < user.videos.length; i++) {
+      if (user.videos[i].id === id) {
+         video = user.videos[i];
+         break;
+      }
+   }
+
+   if (video) {
+      let favorites = JSON.parse(window.localStorage.getItem("favorites"));
+
+      if (!favorites) favorites = [];
+
+      if (favorites.includes(video) === false) {
+         favorites.push(video);
+      }
+      else if (favorites.includes(video)){
+         favorites = favorites.filter(fave => fave != video);
+      }
+
+      window.localStorage.setItem("favorites", JSON.stringify(favorites));
+   }
+}
+
+function hideHandler(event) {
+   event.preventDefault();
+}
+
 function clickHandler(event) {
    // Play/Pause
    if (event.target.tagName !== "VIDEO") return;
@@ -195,22 +255,36 @@ function clickHandler(event) {
 }
 
 function doubleClickHandler(event) {
-   event.target.requestFullscreen();
-   event.target.play();
-   if (event.target.controls) event.target.controls = false;
-   else event.target.controls = true;
+   event.stopImmediatePropagation();
+
+   let classList = [...event.target.classList];
+
+   fullscreenCollection =
+      videoMainEl.getElementsByClassName("pseudofullscreen");
+   for (let i = 0; i < fullscreenCollection.length; i++) {
+      fullscreenCollection[i].classList.remove("pseudofullscreen");
+   }
+
+   if (!classList.includes("pseudofullscreen")) {
+      event.target.classList.add("pseudofullscreen");
+      event.target.setAttribute("controls", "");
+      // event.target.play();
+   }
 }
 
 function touchHandler(event) {
-   if (event.type === "touchstart") fingerHeld = true;
-   else if (event.type === "touchend") {
-      fingerHeld = false;
-      mobileScroll(videoCollection);
+   if (event.type === "touchstart") {
+      touchStartY = videoMainEl.scrollTop;
+   } else if (event.type === "touchend") {
+      touchEndY = videoMainEl.scrollTop;
+      mobileScroll(videoCollection, touchStartY, touchEndY);
    }
 }
 
 toTopEl.addEventListener("click", toTopHandler);
 toBottomEl.addEventListener("click", toBottomHandler);
+faveEl.addEventListener("click", favoriteHandler);
+hideEl.addEventListener("click", hideHandler);
 
 videoMainEl.addEventListener("click", clickHandler);
 videoMainEl.addEventListener("dblclick", doubleClickHandler);

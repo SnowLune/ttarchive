@@ -27,10 +27,10 @@ fi
 
 if [ ! -f "$1" ]; then
    # Check for user directory
-   if [ -d "$ttgetHome"/"$1" ]; then
-      if [ -f "$ttgetHome"/"$1"/"$1".list ]; then
+   if [ -d "$ttgetHome"/user/"$1" ]; then
+      if [ -f "$ttgetHome"/user/"$1"/"$1".list ]; then
          echo "Found URL list for $1"
-         inputFile="$ttgetHome"/"$1"/"$1".list
+         inputFile="$ttgetHome"/user/"$1"/"$1".list
       else
          echo "ERROR: Found user directory but no URL list for $1."
          echo "Please save a new HTML page for $1. Exiting..."
@@ -54,18 +54,46 @@ if [ "$username" = "" ] || [ "${username:0:1}" != "@" ]; then
    exit 1
 fi
 
-outputDir="$ttgetHome"/"$username"
+# Directory for this user
+outputDir="$ttgetHome"/user/"$username"
 
-if [ -d "$outputDir" ]; then
-   echo "Found user file for $username."
+# Create /user directory if it does not exist
+if [ ! -d "$ttgetHome/user" ]; then
+   mkdir "$ttgetHome"/user
+   # Can safely assume if /user doesn't exist then @username dir doesn't exist
+   mkdir "$outputDir" "$outputDir"/video
+
+# User directory exists
+elif [ -d "$outputDir" ]; then
+   echo "Found user directory for [ $username ]."
+
+   # User's video directory DOES NOT exist
    if [ ! -d "$outputDir"/video ]; then
       echo "No video directory found. Creating one..."
-      mkdir -p "$outputDir"/video
+      mkdir "$outputDir"/video
+
+   # User's video directory DOES exist
+   elif [ -d "$outputDir"/video ]; then
+      echo "Found video directory for [ $username ]."
+
+   # Catch
+   else
+      echo "READ ERROR: Error reading directories"
+      exit 1
    fi
+
+# User directory DOES NOT exist
+elif [ ! -d "$outputDir" ]; then
+   echo "No user directory found for [ $username ]. Creating one..."
+   mkdir "$outputDir" "$outputDir"/video
+
+# Catch
 else
-   mkdir -p "$outputDir"/video
+   echo "READ ERROR: Error reading directories"
+   exit 1
 fi
 
+# List of video URLs grepped from the user's TikTok webapp page
 videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
 videoListFile="$outputDir"/"$username".list
 echo $videoList | tr " " "\n" > "$videoListFile"
@@ -162,13 +190,13 @@ userThumbRowComponent=$(cat \
 userLinkElements=""
 
 ### Loop through all user directories
-for i in "$ttgetHome"/@*; do
+for i in "$ttgetHome"/user/@*; do
    currentUsername=$(basename "$i")
 
    # Thumbnails for homepage
    userThumbElements=""
    userThumbRowElements=""
-   cd "$ttgetHome"/"$currentUsername"
+   cd "$ttgetHome"/user/"$currentUsername"
    thumbnails=$(find video/*.webp -maxdepth 1 -type f -iname "*.webp" | sort \
       | tail -9)
    for j in {1..9}; do
@@ -176,7 +204,7 @@ for i in "$ttgetHome"/@*; do
       if [ "$previewThumb" = "" ]; then break; fi
       
       tempUserThumbElements=$userThumbElements
-      newUserThumbElement=$(echo "$userThumbComponent" | sed "s#THUMBNAIL_URI#./$currentUsername/$previewThumb#")
+      newUserThumbElement=$(echo "$userThumbComponent" | sed "s#THUMBNAIL_URI#./user/$currentUsername/$previewThumb#")
       userThumbElements="$newUserThumbElement""$tempUserThumbElements"
 
       if [ $(($j % 3)) -eq 0  ]; then
@@ -193,13 +221,13 @@ for i in "$ttgetHome"/@*; do
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
    # Create HTML for user
-   cp "$ttgetShare"/user.html "$ttgetHome"/"$currentUsername"/index.html
+   cp "$ttgetShare"/user.html "$ttgetHome"/user/"$currentUsername"/index.html
 
    videoComponent=$(cat $ttgetShare/components/video.html | tr -d "\n")
 
    ### Generate video javascript object
    echo "Generating html for $currentUsername..."
-   cd "$ttgetHome"/"$currentUsername"/video
+   cd "$ttgetHome"/user/"$currentUsername"/video
 
    for i in *.mp4; do
       # ID
@@ -219,15 +247,15 @@ for i in "$ttgetHome"/@*; do
             thumbnail: \"./video/"$thumbnail"\",
             username: \"$currentUsername\" },"
 
-      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttgetHome"/"$currentUsername"/index.html
+      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttgetHome"/user/"$currentUsername"/index.html
    done
 
-   sed -i "s%USERNAME%$currentUsername%g" "$ttgetHome"/"$currentUsername"/index.html
-   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttgetHome"/"$currentUsername"/index.html
-   sed -i "s%VIDEO_OBJECTS%%g" "$ttgetHome"/"$currentUsername"/index.html
+   sed -i "s%USERNAME%$currentUsername%g" "$ttgetHome"/user/"$currentUsername"/index.html
+   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttgetHome"/user/"$currentUsername"/index.html
+   sed -i "s%VIDEO_OBJECTS%%g" "$ttgetHome"/user/"$currentUsername"/index.html
 
-   if [ -f "$ttgetHome"/"$currentUsername"/index.html ]; then
-      echo "Generated html page for $currentUsername: $ttgetHome/$currentUsername/index.html"
+   if [ -f "$ttgetHome"/user/"$currentUsername"/index.html ]; then
+      echo "Generated html page for $currentUsername: $ttgetHome/user/$currentUsername/index.html"
    fi
 done
 

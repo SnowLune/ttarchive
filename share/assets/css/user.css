@@ -41,11 +41,16 @@ span.material-symbols-rounded a {
    display: flex;
    justify-content: center;
    align-items: center;
-   margin: 0 10px;
+   flex-direction: column;
+}
+
+.username-status > h1,
+.username-status > h2,
+.username-status > h3 {
+   margin: 0;
 }
 
 @media screen and (min-width: 600px) {
-
 }
 
 @media screen and (min-width: 768px) {
@@ -56,9 +61,7 @@ span.material-symbols-rounded a {
 }
 
 @media screen and (min-width: 992px) {
-   
 }
 
 @media screen and (min-width: 1200px) {
-   
 }

@@ -1,13 +1,66 @@
-// Constants
-const videoCollection = document.getElementsByClassName("video-post");
-
 // Globals
 var fingerHeld;
+var videoCollection;
 
 // Global Elements
+var mainEl = document.getElementById("main");
+var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
 var toTopEl = document.querySelector(".to-top-icon a");
 var toBottomEl = document.querySelector(".to-bottom-icon a");
+
+function createLoader() {
+   let loader = document.createElement("h3");
+   loader.innerText = "Loading...";
+   return loader;
+}
+
+function createVideoElement(videoObject) {
+   return new Promise((resolve) => {
+      let videoEl = document.createElement("video");
+      videoEl.className = "video-post";
+      if (videoObject.description) videoEl.setAttribute("preload", "none");
+      else videoEl.setAttribute("preload", "metadata");
+
+      videoEl.setAttribute("poster", `${videoObject.thumbnail}`);
+      videoEl.setAttribute("playsinline", "true");
+      videoEl.setAttribute("x5-playsinline", "true");
+      videoEl.setAttribute("webkit-playsinline", "true");
+      videoEl.setAttribute("tabindex", "2");
+      videoEl.setAttribute("loop", "");
+      videoEl.setAttribute("mediatype", "video");
+      videoEl.setAttribute(
+         "style",
+         `background-image: url("${videoObject.thumbnail}")\
+            ; background-repeat: no-repeat\
+            ; background-position: center\
+            ; background-size: contain`
+      );
+      videoEl.setAttribute("src", videoObject.file);
+      videoMainEl.appendChild(videoEl);
+
+      setTimeout(resolve, 0.01);
+   });
+}
+
+async function createVideos(user) {
+   try {
+      let loader = createLoader();
+      userStatusEl.appendChild(loader);
+
+      for (let i = 0; i < user.videos.length; i++) {
+         await createVideoElement(user.videos[i]);
+         videoCollection = document.getElementsByClassName("video-post");
+         loader.innerText = `Loading (${Math.floor(
+            (videoCollection.length / user.videos.length) * 100
+         )}%)`;
+      }
+
+      loader.remove();
+   } catch {
+      console.error("Failed to load video.");
+   }
+}
 
 function togglePlay(video) {
    if (video.paused) {
@@ -112,7 +165,7 @@ function keyHandler(event) {
 
    // We scrolled with keys to get here
    if (!nearestVideo)
-      nearestVideo = videoCollection[`${ getNearestVideoIndex() }`];
+      nearestVideo = videoCollection[`${getNearestVideoIndex()}`];
    if (isMobile(nearestVideo) && nearestVideo.paused)
       setTimeout(() => togglePlay(nearestVideo), 200);
 }
@@ -165,3 +218,8 @@ videoMainEl.addEventListener("touchstart", touchHandler);
 videoMainEl.addEventListener("touchend", touchHandler);
 
 document.addEventListener("keydown", keyHandler);
+
+// Load videos after initial content is rendered
+window.addEventListener("load", () => {
+   createVideos(user);
+});

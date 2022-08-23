@@ -8,6 +8,7 @@
       <link rel="stylesheet" href="../assets/css/font.css" />
       <link rel="stylesheet" href="../assets/css/main.css" />
       <link rel="stylesheet" href="../assets/css/user.css" />
+      <link rel="stylesheet" href="../assets/css/loader.css" />
    </head>
    <body>
       <main id="main">
@@ -15,7 +16,8 @@
             <span class="material-symbols-rounded home-icon"
                ><a href="../index.html"> home </a></span
             >
-            <h1>USERNAME</h1>
+            <div class="username-status"><h1>USERNAME</h1></div>
+
             <div class="controls">
                <span class="material-symbols-rounded to-top-icon">
                   <a href=""> north </a>
@@ -25,8 +27,13 @@
                </span>
             </div>
          </header>
-         <div class="video-main">VIDEO_MAIN_ELEMENTS</div>
+         <div class="video-main"></div>
       </main>
+      <script>
+         const user = {
+            videos: [VIDEO_OBJECTS],
+         };
+      </script>
       <script src="../assets/js/user.js"></script>
    </body>
 </html>

@@ -197,30 +197,46 @@ for i in "$ttgetHome"/@*; do
 
    videoComponent=$(cat $ttgetShare/components/video.html | tr -d "\n")
 
-   # Generate <video> elements
+   ### Generate video javascript object
    echo "Generating html for $currentUsername..."
    cd "$ttgetHome"/"$currentUsername"/video
 
    for i in *.mp4; do
-      # Thumbnail file
+      # ID
+      currentID=$(basename -s .mp4 "$i")
+      # Thumbnail
       thumbnail=$(echo $i | sed 's#mp4#webp#')
-
-      # If the thumbnail doesn't exist preload the video
-      if [ -f "$thumbnail" ]; then
-         newVideoElement=$(echo "$videoComponent" \
-            | sed -e "s%VIDEO_FILE%./video/$i%" \
-            -e "s%VIDEO_THUMBNAIL%./video/$thumbnail%" \
-            -e "s%BACKGROUND_THUMBNAIL%./video/$thumbnail%")
+      # Description
+      if [ -f "$currentID".description ]; then
+         description=$(cat "$currentID".description | tr "\n" " ")
       else
-         newVideoElement=$(echo "$videoComponent" \
-            | sed -e "s%VIDEO_FILE%./video/$i%" \
-            -e "s%VIDEO_THUMBNAIL%%" -e "s%preload=\"none\"%preload=\"metadata\"%")
+         description=""
       fi
-      sed -i "s%VIDEO_MAIN_ELEMENTS%VIDEO_MAIN_ELEMENTS$newVideoElement%g" "$ttgetHome"/"$currentUsername"/index.html
+      
+      videoObject="{ id: \"$currentID\", 
+            file: \"./video/"$i"\", 
+            description: \""description"\",
+            thumbnail: \"./video/"$thumbnail"\" },"
+
+      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttgetHome"/"$currentUsername"/index.html
+
+      # # If the thumbnail doesn't exist preload the video
+      # if [ -f "$thumbnail" ]; then
+      #    newVideoElement=$(echo "$videoComponent" \
+      #       | sed -e "s%VIDEO_FILE%./video/$i%" \
+      #       -e "s%VIDEO_THUMBNAIL%./video/$thumbnail%" \
+      #       -e "s%BACKGROUND_THUMBNAIL%./video/$thumbnail%")
+      # else
+      #    newVideoElement=$(echo "$videoComponent" \
+      #       | sed -e "s%VIDEO_FILE%./video/$i%" \
+      #       -e "s%VIDEO_THUMBNAIL%%" -e "s%preload=\"none\"%preload=\"metadata\"%")
+      # fi
+      # sed -i "s%VIDEO_MAIN_ELEMENTS%VIDEO_MAIN_ELEMENTS$newVideoElement%g" "$ttgetHome"/"$currentUsername"/index.html
    done
 
    sed -i "s%USERNAME%$currentUsername%g" "$ttgetHome"/"$currentUsername"/index.html
    sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttgetHome"/"$currentUsername"/index.html
+   sed -i "s%VIDEO_OBJECTS%%g" "$ttgetHome"/"$currentUsername"/index.html
 
    if [ -f "$outputDir"/index.html ]; then
       echo "Generated html page for $currentUsername: $ttgetHome/$currentUsername/index.html"

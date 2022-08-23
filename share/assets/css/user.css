@@ -3,7 +3,7 @@
    justify-content: center;
    align-items: center;
    flex-wrap: wrap;
-   background-color: #262626;
+   background-color: #000;
    height: calc(100vh - var(--title-bar-height));
    overflow-y: scroll;
    scroll-snap-type: y mandatory;
@@ -64,6 +64,10 @@ span.material-symbols-rounded a {
    color: red;
 }
 
+.hidden {
+   display: none;
+}
+
 /* .no-scroll {
    overflow-y: hidden;
 } */
@@ -72,6 +76,10 @@ span.material-symbols-rounded a {
 }
 
 @media screen and (min-width: 768px) {
+   .video-main {
+      background-color: #262626;
+   }
+
    .video-post {
       width: inherit;
       margin: 5px;

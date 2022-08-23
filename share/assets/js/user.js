@@ -2,6 +2,8 @@
 var touchStartY;
 var touchEndY;
 var videoCollection;
+var favorites;
+var hidden;
 
 // Global Elements
 var mainEl = document.getElementById("main");
@@ -12,6 +14,33 @@ var toBottomEl = document.querySelector(".to-bottom-icon a");
 var faveEl = document.querySelector(".favorite-icon a");
 var hideEl = document.querySelector(".hide-icon a");
 
+function getFavorites() {
+   let favorites = JSON.parse(window.localStorage.getItem("favorites"));
+   return favorites;
+}
+
+function getHidden() {
+   let hidden = JSON.parse(window.localStorage.getItem("hidden"));
+   return hidden;
+}
+
+function toggleHidden(videoEl, id) {
+   let hidden = getHidden();
+
+   if (videoEl) {
+      if (hidden.filter((hidden) => hidden.id == id))
+         videoEl.classList.toggle("hidden");
+      return;
+   } else {
+      let videos = document.getElementsByClassName("video-post");
+      for (let i = 0; i < videos.length; i++) {
+         hidden
+            .filter((hidden) => hidden.id == videos[i].getAttribute("data-id"))
+            .forEach(() => videos[i].classList.toggle("hidden"));
+      }
+   }
+}
+
 function createLoader() {
    let loader = document.createElement("h3");
    loader.innerText = "Loading...";
@@ -20,18 +49,18 @@ function createLoader() {
 
 function createVideoElement(videoObject) {
    return new Promise((resolve) => {
-      // Get favorites and hidden from storage
-      let favorites = JSON.parse(window.localStorage.getItem("favorites"));
-
       // Create <video> element
       // Set class names
       let videoEl = document.createElement("video");
       videoEl.className = "video-post";
 
-      if (favorites && favorites.includes(videoObject)) {
+      // Check favorites and hidden, add classes
+      // toggleHidden(videoEl, videoObject.id);
+
+      let favorites = getFavorites();
+      if (favorites && favorites.filter((fave) => fave.id === videoObject.id)) {
          videoEl.classList.add("favorite");
       }
-
 
       if (videoObject.description) videoEl.setAttribute("preload", "none");
       else videoEl.setAttribute("preload", "metadata");
@@ -80,6 +109,11 @@ async function createVideos(user) {
 
 function togglePlay(video) {
    if (video.paused) {
+      // Check if it's a favorite
+      // if (favorites.filter((faveVideo) => faveVideo.id === video.id))
+      //    faveEl.setAttribute("style", "color: red");
+      // else faveEl.removeAttribute("style");
+
       for (let i = 0; i < videoCollection.length; i++) {
          if (videoCollection[i].paused === false) videoCollection[i].pause();
       }
@@ -231,9 +265,8 @@ function favoriteHandler(event) {
 
       if (favorites.includes(video) === false) {
          favorites.push(video);
-      }
-      else if (favorites.includes(video)){
-         favorites = favorites.filter(fave => fave != video);
+      } else if (favorites.includes(video)) {
+         favorites = favorites.filter((fave) => fave != video);
       }
 
       window.localStorage.setItem("favorites", JSON.stringify(favorites));
@@ -242,6 +275,39 @@ function favoriteHandler(event) {
 
 function hideHandler(event) {
    event.preventDefault();
+
+   nearestVideo = getNearestVideo(videoCollection);
+   console.log(nearestVideo);
+   id = nearestVideo.getAttribute("data-id");
+   let video;
+
+   for (let i = 0; i < user.videos.length; i++) {
+      if (user.videos[i].id === id) {
+         video = user.videos[i];
+         break;
+      }
+   }
+
+   if (video) {
+      console.log(video);
+      let hidden = getHidden();
+
+      if (!hidden) hidden = [];
+
+      if (hidden.every((hidden) => hidden.id != id)) {
+         console.log("yes");
+         hidden.push(video);
+         nearestVideo.classList.add("hidden");
+      }
+
+      // Remove from hidden
+      else if (hidden.filter((hidden) => hidden.id == id)) {
+         hidden = hidden.filter((hidden) => hidden.id != id);
+         nearestVideo.classList.remove("hidden");
+      }
+
+      window.localStorage.setItem("hidden", JSON.stringify(hidden));
+   }
 }
 
 function clickHandler(event) {
@@ -296,4 +362,6 @@ document.addEventListener("keydown", keyHandler);
 // Load videos after initial content is rendered
 window.addEventListener("load", () => {
    createVideos(user);
+   favorites = getFavorites();
+   hidden = getHidden();
 });

@@ -113,9 +113,12 @@ function togglePlay(video) {
       // if (favorites.filter((faveVideo) => faveVideo.id === video.id))
       //    faveEl.setAttribute("style", "color: red");
       // else faveEl.removeAttribute("style");
-
-      for (let i = 0; i < videoCollection.length; i++) {
-         if (videoCollection[i].paused === false) videoCollection[i].pause();
+      
+      // Pause playing videos if mobile
+      if (isMobile(video)) {
+         for (let i = 0; i < videoCollection.length; i++) {
+            if (videoCollection[i].paused === false) videoCollection[i].pause();
+         }
       }
 
       // Load if not loaded before playing so we don't get a black flickering
@@ -353,7 +356,7 @@ faveEl.addEventListener("click", favoriteHandler);
 hideEl.addEventListener("click", hideHandler);
 
 videoMainEl.addEventListener("click", clickHandler);
-videoMainEl.addEventListener("dblclick", doubleClickHandler);
+//videoMainEl.addEventListener("dblclick", doubleClickHandler);
 videoMainEl.addEventListener("touchstart", touchHandler);
 videoMainEl.addEventListener("touchend", touchHandler);
 

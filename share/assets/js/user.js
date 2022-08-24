@@ -114,8 +114,11 @@ function togglePlay(video) {
       //    faveEl.setAttribute("style", "color: red");
       // else faveEl.removeAttribute("style");
 
-      for (let i = 0; i < videoCollection.length; i++) {
-         if (videoCollection[i].paused === false) videoCollection[i].pause();
+      // Pause playing videos if mobile
+      if (isMobile(video)) {
+         for (let i = 0; i < videoCollection.length; i++) {
+            if (videoCollection[i].paused === false) videoCollection[i].pause();
+         }
       }
 
       // Load if not loaded before playing so we don't get a black flickering
@@ -178,7 +181,6 @@ function mobileScroll(videos, scrollStart, scrollStop) {
 
    if (scrollStart && scrollStop) {
       let scrollDiff = scrollStop - scrollStart;
-      console.log(scrollDiff);
 
       if (scrollDiff === 0) return;
       else if (scrollDiff > 0) {
@@ -216,6 +218,25 @@ function keyHandler(event) {
          togglePlay(nearestVideo);
          return;
       }
+   } else if (event.key === "f") {
+      fullscreenCollection =
+         videoMainEl.getElementsByClassName("pseudofullscreen");
+      if (fullscreenCollection) {
+         for (let i = 0; i < fullscreenCollection.length; i++) {
+            fullscreenCollection[i].classList.remove("pseudofullscreen");
+         }
+         return;
+      } else {
+         for (let i = 0; i < videoCollection.length; i++) {
+            if (videoCollection[i].paused === false) {
+               event.target.classList.add("pseudofullscreen");
+               event.target.setAttribute("controls", "");
+               event.target.play();
+               break;
+            }
+         }
+         return;
+      }
    } else if (event.key === "Home") {
       nearestVideo = videoCollection[0];
       scrollVideo(nearestVideo);
@@ -225,8 +246,7 @@ function keyHandler(event) {
    } else return;
 
    // We scrolled with keys to get here
-   if (!nearestVideo)
-      nearestVideo = videoCollection[`${getNearestVideoIndex()}`];
+   if (!nearestVideo) nearestVideo = getNearestVideo(videoCollection);
    if (isMobile(nearestVideo) && nearestVideo.paused)
       setTimeout(() => togglePlay(nearestVideo), 200);
 }
@@ -277,7 +297,6 @@ function hideHandler(event) {
    event.preventDefault();
 
    nearestVideo = getNearestVideo(videoCollection);
-   console.log(nearestVideo);
    id = nearestVideo.getAttribute("data-id");
    let video;
 
@@ -289,13 +308,11 @@ function hideHandler(event) {
    }
 
    if (video) {
-      console.log(video);
       let hidden = getHidden();
 
       if (!hidden) hidden = [];
 
       if (hidden.every((hidden) => hidden.id != id)) {
-         console.log("yes");
          hidden.push(video);
          nearestVideo.classList.add("hidden");
       }
@@ -353,7 +370,7 @@ faveEl.addEventListener("click", favoriteHandler);
 hideEl.addEventListener("click", hideHandler);
 
 videoMainEl.addEventListener("click", clickHandler);
-videoMainEl.addEventListener("dblclick", doubleClickHandler);
+//videoMainEl.addEventListener("dblclick", doubleClickHandler);
 videoMainEl.addEventListener("touchstart", touchHandler);
 videoMainEl.addEventListener("touchend", touchHandler);
 

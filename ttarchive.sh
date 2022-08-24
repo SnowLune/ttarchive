@@ -25,6 +25,13 @@ if [ "$1" = "" ]; then
    exit 1
 fi
 
+# Check path for yt-dlp
+if [ "$(which yt-dlp)" == "" ]; then
+   echo "ERROR: yt-dlp not found. It is required to download content."
+   echo "Please install the latest version. See: [https://github.com/yt-dlp/yt-dlp#installation]"
+   exit 1
+fi
+
 if [ ! -f "$1" ]; then
    # Check for user directory
    if [ -d "$ttarchiveHome"/user/"$1" ]; then

@@ -68,9 +68,13 @@ span.material-symbols-rounded a {
    display: none;
 }
 
-/* .no-scroll {
-   overflow-y: hidden;
-} */
+/* Remove these while I work on implementing them properly */
+.favorite-icon,
+.hide-icon,
+.delete-icon,
+.unhide-icon {
+   display: none;
+}
 
 @media screen and (min-width: 600px) {
 }

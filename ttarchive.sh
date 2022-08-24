@@ -1,22 +1,22 @@
 #!/bin/bash
 
-ttgetConfig=~/.config/ttget/ttget.config
+ttarchiveConfig=~/.config/ttarchive/ttarchive.config
 
-if [ -f "$ttgetConfig" ]; then
-   . "$ttgetConfig"
+if [ -f "$ttarchiveConfig" ]; then
+   . "$ttarchiveConfig"
 fi
 
-if [ "$ttgetHome" = "" ]; then
-   echo "ttgetHome environment variable not set. Exiting..."
+if [ "$ttarchiveHome" = "" ]; then
+   echo "ttarchiveHome environment variable not set. Exiting..."
    exit 1
 fi
 
-if [ "$ttgetShare" = "" ]; then
-   ttgetShare=~/.local/share/ttget
+if [ "$ttarchiveShare" = "" ]; then
+   ttarchiveShare=~/.local/share/ttarchive
 fi
 
-if [ ! -d "$ttgetShare" ]; then
-   echo "ERROR: $ttgetShare is missing. Exiting..."
+if [ ! -d "$ttarchiveShare" ]; then
+   echo "ERROR: $ttarchiveShare is missing. Exiting..."
    exit 1
 fi
 
@@ -27,10 +27,10 @@ fi
 
 if [ ! -f "$1" ]; then
    # Check for user directory
-   if [ -d "$ttgetHome"/user/"$1" ]; then
-      if [ -f "$ttgetHome"/user/"$1"/"$1".list ]; then
+   if [ -d "$ttarchiveHome"/user/"$1" ]; then
+      if [ -f "$ttarchiveHome"/user/"$1"/"$1".list ]; then
          echo "Found URL list for $1"
-         inputFile="$ttgetHome"/user/"$1"/"$1".list
+         inputFile="$ttarchiveHome"/user/"$1"/"$1".list
       else
          echo "ERROR: Found user directory but no URL list for $1."
          echo "Please save a new HTML page for $1. Exiting..."
@@ -55,11 +55,11 @@ if [ "$username" = "" ] || [ "${username:0:1}" != "@" ]; then
 fi
 
 # Directory for this user
-outputDir="$ttgetHome"/user/"$username"
+outputDir="$ttarchiveHome"/user/"$username"
 
 # Create /user directory if it does not exist
-if [ ! -d "$ttgetHome/user" ]; then
-   mkdir "$ttgetHome"/user
+if [ ! -d "$ttarchiveHome/user" ]; then
+   mkdir "$ttarchiveHome"/user
    # Can safely assume if /user doesn't exist then @username dir doesn't exist
    mkdir "$outputDir" "$outputDir"/video
 
@@ -170,33 +170,33 @@ fi
 
 # Make directories and copy files
 
-if [ ! -d "$ttgetHome" ]; then
-   mkdir "$ttgetHome"
+if [ ! -d "$ttarchiveHome" ]; then
+   mkdir "$ttarchiveHome"
 fi
 
-if [ ! -d "$ttgetHome"/assets ]; then
-   mkdir "$ttgetHome"/assets
+if [ ! -d "$ttarchiveHome"/assets ]; then
+   mkdir "$ttarchiveHome"/assets
 fi
 
-cp "$ttgetShare"/home.html "$ttgetHome"/index.html
-cp -ur "$ttgetShare"/assets "$ttgetHome"
+cp "$ttarchiveShare"/home.html "$ttarchiveHome"/index.html
+cp -ur "$ttarchiveShare"/assets "$ttarchiveHome"
 
 # Set user link components
-userLinkComponent=$(cat $ttgetShare/components/user-link.html | tr -d "\n")
-userThumbComponent=$(cat $ttgetShare/components/user-preview-image.html \
+userLinkComponent=$(cat $ttarchiveShare/components/user-link.html | tr -d "\n")
+userThumbComponent=$(cat $ttarchiveShare/components/user-preview-image.html \
    | tr -d "\n")
 userThumbRowComponent=$(cat \
-   $ttgetShare/components/user-gallery-preview-row.html | tr -d "\n")
+   $ttarchiveShare/components/user-gallery-preview-row.html | tr -d "\n")
 userLinkElements=""
 
 ### Loop through all user directories
-for i in "$ttgetHome"/user/@*; do
+for i in "$ttarchiveHome"/user/@*; do
    currentUsername=$(basename "$i")
 
    # Thumbnails for homepage
    userThumbElements=""
    userThumbRowElements=""
-   cd "$ttgetHome"/user/"$currentUsername"
+   cd "$ttarchiveHome"/user/"$currentUsername"
    thumbnails=$(find video/*.webp -maxdepth 1 -type f -iname "*.webp" | sort \
       | tail -9)
    for j in {1..9}; do
@@ -221,13 +221,13 @@ for i in "$ttgetHome"/user/@*; do
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
    # Create HTML for user
-   cp "$ttgetShare"/user.html "$ttgetHome"/user/"$currentUsername"/index.html
+   cp "$ttarchiveShare"/user.html "$ttarchiveHome"/user/"$currentUsername"/index.html
 
-   videoComponent=$(cat $ttgetShare/components/video.html | tr -d "\n")
+   videoComponent=$(cat $ttarchiveShare/components/video.html | tr -d "\n")
 
    ### Generate video javascript object
    echo "Generating html for $currentUsername..."
-   cd "$ttgetHome"/user/"$currentUsername"/video
+   cd "$ttarchiveHome"/user/"$currentUsername"/video
 
    for i in *.mp4; do
       # ID
@@ -247,22 +247,22 @@ for i in "$ttgetHome"/user/@*; do
             thumbnail: \"./video/"$thumbnail"\",
             username: \"$currentUsername\" },"
 
-      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttgetHome"/user/"$currentUsername"/index.html
+      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttarchiveHome"/user/"$currentUsername"/index.html
    done
 
-   sed -i "s%USERNAME%$currentUsername%g" "$ttgetHome"/user/"$currentUsername"/index.html
-   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttgetHome"/user/"$currentUsername"/index.html
-   sed -i "s%VIDEO_OBJECTS%%g" "$ttgetHome"/user/"$currentUsername"/index.html
+   sed -i "s%USERNAME%$currentUsername%g" "$ttarchiveHome"/user/"$currentUsername"/index.html
+   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttarchiveHome"/user/"$currentUsername"/index.html
+   sed -i "s%VIDEO_OBJECTS%%g" "$ttarchiveHome"/user/"$currentUsername"/index.html
 
-   if [ -f "$ttgetHome"/user/"$currentUsername"/index.html ]; then
-      echo "Generated html page for $currentUsername: $ttgetHome/user/$currentUsername/index.html"
+   if [ -f "$ttarchiveHome"/user/"$currentUsername"/index.html ]; then
+      echo "Generated html page for $currentUsername: $ttarchiveHome/user/$currentUsername/index.html"
    fi
 done
 
-sed -i "s#USER_LINKS#$userLinkElements#g" "$ttgetHome"/index.html
+sed -i "s#USER_LINKS#$userLinkElements#g" "$ttarchiveHome"/index.html
 
-if [ -f "$ttgetHome"/index.html ]; then
-   echo "Generated ttget home page: $ttgetHome/index.html"
+if [ -f "$ttarchiveHome"/index.html ]; then
+   echo "Generated ttarchive home page: $ttarchiveHome/index.html"
 fi
 
 # Delete temp file

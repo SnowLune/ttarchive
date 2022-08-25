@@ -59,9 +59,9 @@ fi
 if [ ! -f "$1" ]; then
    # Check for user directory
    if [ -d "$ttarchiveOutput"/user/"$1" ]; then
-      if [ -f "$ttarchiveOutput"/user/"$1"/"$1".list ]; then
+      if [ -f "$ttarchiveOutput"/user/"$1"/"$1".url.list ]; then
          echo "Found URL list for $1 ."
-         inputFile="$ttarchiveOutput"/user/"$1"/"$1".list
+         inputFile="$ttarchiveOutput"/user/"$1"/"$1".url.list
       else
          echo "ERROR: Found user directory but no URL list for $1 ."
          echo "Please save a new HTML page for $1 . Exiting..."
@@ -78,7 +78,7 @@ else
 fi
 
 # Set username from input filename
-username=`ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.list%%'`
+username=`ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.url.list%%'`
 
 # Check if filename gave us a valid username
 if [ "$username" = "" ] || [ "${username:0:1}" != "@" ]; then
@@ -127,7 +127,7 @@ fi
 
 # List of video URLs grepped from the user's TikTok webapp page
 videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
-videoListFile="$userOutputDir"/"$username".list
+videoListFile="$userOutputDir"/"$username".url.list
 echo $videoList | tr " " "\n" > "$videoListFile"
 
 # Create list of mp4s
@@ -152,13 +152,14 @@ done
 echo $videoList | tr " " "\n" > "$videoListFile".tmp
 
 if [ "$videoList" != "" ]; then
-   echo -n "Found $(echo $videoList | tr " " "\n" | sed '/^$/d' | wc -l) new videos "
-   echo "from $username"
+   echo -n "Found $(echo $videoList | tr " " "\n" | sed '/^$/d' | wc -l) "
+   echo "new videos from $username ."
    echo "Starting download..."
 
-   yt-dlp -f "b*[vcodec=h264]" --progress --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
+   yt-dlp -f "b*[vcodec=h264]" --write-thumbnail --write-description \
+      --write-info-json --no-mtime --no-overwrites \
       -P "$userOutputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
-      -a "$videoListFile".tmp
+      --progress -a "$videoListFile".tmp
 
 else
    echo "No new videos from $username"
@@ -218,12 +219,22 @@ userLinkElements=""
 
 ### Loop through all user directories
 for i in "$ttarchiveOutput"/user/@*; do
+   # Current user
    currentUsername=$(basename "$i")
+   # Current user directory
+   userDir="$ttarchiveOutput"/user/"$currentUsername"
+   # User video directory
+   userVideoDir="$ttarchiveOutput"/user/"$currentUsername"/video
+
+   # List of all video files for this user
+   userVideoFileList="$userDir"/"$currentUsername".file.list
+   # Create a blank file if it doesn't exist
+   if [ ! -f "$userVideoFileList" ]; then touch "$userVideoFileList"; fi
 
    # Thumbnails for homepage
    userThumbElements=""
    userThumbRowElements=""
-   cd "$ttarchiveOutput"/user/"$currentUsername"
+   cd "$userDir"
    thumbnails=$(find video/*.webp -maxdepth 1 -type f -iname "*.webp" | sort \
       | tail -9)
    for j in {1..9}; do
@@ -248,41 +259,53 @@ for i in "$ttarchiveOutput"/user/@*; do
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
    # Create HTML for user
-   cp "$ttarchiveShare"/user.html "$ttarchiveOutput"/user/"$currentUsername"/index.html
+   templateUserPage="$ttarchiveShare"/user.html
+   userPage="$userDir"/index.html
 
-   videoComponent=$(cat $ttarchiveShare/components/video.html | tr -d "\n")
+   if [ "$templateUserPage" -nt "$userPage" ] \
+      || [ "$(ls -1 "$userVideoDir")" != "$(cat "$userVideoFileList")" ]; then
+      # Create new video file list
+      ls -1 "$userVideoDir" > "$userVideoFileList"
 
-   ### Generate video javascript object
-   echo "Generating html for $currentUsername..."
-   cd "$ttarchiveOutput"/user/"$currentUsername"/video
+      # Copy template
+      cp "$templateUserPage" "$userPage"
 
-   for i in *.mp4; do
-      # ID
-      currentID=$(basename -s .mp4 "$i")
-      # Thumbnail
-      thumbnail=$(echo $i | sed 's#mp4#webp#')
-      # Description
-      if [ -f "$currentID".description ]; then
-         description=$(cat "$currentID".description | tr "\n" " ")
-      else
-         description=""
+      videoComponent=$(cat $ttarchiveShare/components/video.html | tr -d "\n")
+
+      ### Generate video javascript object
+      echo "Generating html for $currentUsername..."
+      cd "$userVideoDir"
+
+      for i in *.mp4; do
+         # ID
+         currentID=$(basename -s .mp4 "$i")
+         # Thumbnail
+         thumbnail=$(echo $i | sed 's#mp4#webp#')
+         # Description
+         if [ -f "$currentID".description ]; then
+            description=$(cat "$currentID".description | tr "\n" " ")
+         else
+            description=""
+         fi
+         
+         videoObject="{ id: \"$currentID\", 
+               file: \"./video/"$i"\", 
+               description: \"unavailable\",
+               thumbnail: \"./video/"$thumbnail"\",
+               username: \"$currentUsername\" },"
+
+         sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$userPage"
+      done
+
+      sed -i "s%USERNAME%$currentUsername%g" "$userPage"
+      sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$userPage"
+      sed -i "s%VIDEO_OBJECTS%%g" "$userPage"
+
+      if [ -f "$userPage" ]; then
+         echo "Generated html page for $currentUsername: "$userPage""
       fi
-      
-      videoObject="{ id: \"$currentID\", 
-            file: \"./video/"$i"\", 
-            description: \"unavailable\",
-            thumbnail: \"./video/"$thumbnail"\",
-            username: \"$currentUsername\" },"
-
-      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttarchiveOutput"/user/"$currentUsername"/index.html
-   done
-
-   sed -i "s%USERNAME%$currentUsername%g" "$ttarchiveOutput"/user/"$currentUsername"/index.html
-   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttarchiveOutput"/user/"$currentUsername"/index.html
-   sed -i "s%VIDEO_OBJECTS%%g" "$ttarchiveOutput"/user/"$currentUsername"/index.html
-
-   if [ -f "$ttarchiveOutput"/user/"$currentUsername"/index.html ]; then
-      echo "Generated html page for $currentUsername: $ttarchiveOutput/user/$currentUsername/index.html"
+   else
+      echo "Archive page for $currentUsername is already up to date."
    fi
 done
 

@@ -13,7 +13,7 @@ A content backup/archiver and offline viewing app for TikTok.
 ## Installation
    - Create the config file.
       - The config file is ~/.config/ttarchive/ttarhive.config. Create it if it doesn't exist.
-      - Specify the directory to be used as the main archive. This is set in the config file as the variable `ttarchiveHome`.
+      - Specify the directory to be used as the main archive. This is set in the config file as the variable `ttarchiveOutput`.
       - Example config: `ttarchive=/home/user/ttarchive`
    - Run `sh install.sh`
 

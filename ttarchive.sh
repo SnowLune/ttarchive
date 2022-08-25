@@ -4,11 +4,34 @@ ttarchiveConfig=~/.config/ttarchive/ttarchive.config
 
 if [ -f "$ttarchiveConfig" ]; then
    . "$ttarchiveConfig"
+else
+   while true; do
+      read -p "Config file does not exist, would you like to create it? (y/n): " createConfig
+      case $createConfig in
+         [Yy]* ) 
+            echo "ttarchiveOutput=~/ttarchive" > $ttarchiveConfig
+            if [ -f $ttarchiveConfig ]; then
+               echo "Config file created: $ttarchiveConfig"
+               . $ttarchiveConfig
+            else
+               echo "ERROR: Error creating config file."
+            fi
+            break;;
+         [Nn]* ) 
+            echo "Warning: ttarchive will fail if \"ttarchiveOutput\" is not set."; break;;
+         * ) echo "Please answer yes or no.";;
+      esac
+   done
 fi
 
-if [ "$ttarchiveHome" = "" ]; then
-   echo "ttarchiveHome environment variable not set. Exiting..."
+if [ "$ttarchiveOutput" = "" ]; then
+   echo "\"ttarchiveOutput\" environment variable not set. Exiting..."
    exit 1
+else
+   echo "ttarchive output directory set as \"$ttarchiveOutput\""
+   if [ ! -d "$ttarchiveOutput" ]; then
+      mkdir "$ttarchiveOutput"
+   fi
 fi
 
 if [ "$ttarchiveShare" = "" ]; then
@@ -32,56 +55,58 @@ if [ "$(which yt-dlp)" == "" ]; then
    exit 1
 fi
 
+# If input is a username instead of a file
 if [ ! -f "$1" ]; then
    # Check for user directory
-   if [ -d "$ttarchiveHome"/user/"$1" ]; then
-      if [ -f "$ttarchiveHome"/user/"$1"/"$1".list ]; then
-         echo "Found URL list for $1"
-         inputFile="$ttarchiveHome"/user/"$1"/"$1".list
+   if [ -d "$ttarchiveOutput"/user/"$1" ]; then
+      if [ -f "$ttarchiveOutput"/user/"$1"/"$1".list ]; then
+         echo "Found URL list for $1 ."
+         inputFile="$ttarchiveOutput"/user/"$1"/"$1".list
       else
-         echo "ERROR: Found user directory but no URL list for $1."
-         echo "Please save a new HTML page for $1. Exiting..."
+         echo "ERROR: Found user directory but no URL list for $1 ."
+         echo "Please save a new HTML page for $1 . Exiting..."
          exit 1
       fi
+   
    else
       echo "ERROR: No user directory for $1 found."
-      echo "Please save a new HTML page for $1. Exiting..."
+      echo "Please save a new HTML page for $1 . Exiting..."
       exit 1
    fi
 else
    inputFile="$1"
 fi
 
-# Set username
+# Set username from input filename
 username=`ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.list%%'`
 
 # Check if filename gave us a valid username
 if [ "$username" = "" ] || [ "${username:0:1}" != "@" ]; then
-   echo "ERROR: Invalid input filename. Must contain @username."
+   echo "ERROR: Invalid input filename. Must contain @username. Exiting..."
    exit 1
 fi
 
 # Directory for this user
-outputDir="$ttarchiveHome"/user/"$username"
+userOutputDir="$ttarchiveOutput"/user/"$username"
 
 # Create /user directory if it does not exist
-if [ ! -d "$ttarchiveHome/user" ]; then
-   mkdir "$ttarchiveHome"/user
+if [ ! -d "$ttarchiveOutput"/user ]; then
+   mkdir "$ttarchiveOutput"/user
    # Can safely assume if /user doesn't exist then @username dir doesn't exist
-   mkdir "$outputDir" "$outputDir"/video
+   mkdir "$userOutputDir" "$userOutputDir"/video
 
 # User directory exists
-elif [ -d "$outputDir" ]; then
-   echo "Found user directory for [ $username ]."
+elif [ -d "$userOutputDir" ]; then
+   echo "Found user directory for $username ."
 
    # User's video directory DOES NOT exist
-   if [ ! -d "$outputDir"/video ]; then
+   if [ ! -d "$userOutputDir"/video ]; then
       echo "No video directory found. Creating one..."
-      mkdir "$outputDir"/video
+      mkdir "$userOutputDir"/video
 
    # User's video directory DOES exist
-   elif [ -d "$outputDir"/video ]; then
-      echo "Found video directory for [ $username ]."
+   elif [ -d "$userOutputDir"/video ]; then
+      echo "Found video directory for $username ."
 
    # Catch
    else
@@ -90,9 +115,9 @@ elif [ -d "$outputDir" ]; then
    fi
 
 # User directory DOES NOT exist
-elif [ ! -d "$outputDir" ]; then
-   echo "No user directory found for [ $username ]. Creating one..."
-   mkdir "$outputDir" "$outputDir"/video
+elif [ ! -d "$userOutputDir" ]; then
+   echo "No user directory found for $username . Creating one..."
+   mkdir "$userOutputDir" "$userOutputDir"/video
 
 # Catch
 else
@@ -102,11 +127,11 @@ fi
 
 # List of video URLs grepped from the user's TikTok webapp page
 videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
-videoListFile="$outputDir"/"$username".list
+videoListFile="$userOutputDir"/"$username".list
 echo $videoList | tr " " "\n" > "$videoListFile"
 
 # Create list of mp4s
-localVideoFiles=$(find "$outputDir"/video -maxdepth 1 -type f -iregex ".*.mp4")
+localVideoFiles=$(find "$userOutputDir"/video -maxdepth 1 -type f -iregex ".*.mp4")
 
 for i in $localVideoFiles; do 
    # Cut out ID
@@ -132,7 +157,7 @@ if [ "$videoList" != "" ]; then
    echo "Starting download..."
 
    yt-dlp -f "b*[vcodec=h264]" --progress --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
-      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
+      -P "$userOutputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 1 \
       -a "$videoListFile".tmp
 
 else
@@ -151,11 +176,11 @@ function addToMissingMetadataList {
 for i in $(cat "$videoListFile" | sed '/^$/d'); do
    currentID=$(echo "$i" | sed "s%^.*/%%")
    # Check for missing metadata
-   if [ ! -f "$outputDir"/video/"$currentID".description ]; then
+   if [ ! -f "$userOutputDir"/video/"$currentID".description ]; then
       addToMissingMetadataList
-   elif [ ! -f "$outputDir"/video/"$currentID".info.json ]; then
+   elif [ ! -f "$userOutputDir"/video/"$currentID".info.json ]; then
       addToMissingMetadataList
-   elif [ ! -f "$outputDir"/video/"$currentID".webp ]; then
+   elif [ ! -f "$userOutputDir"/video/"$currentID".webp ]; then
       addToMissingMetadataList
    fi
 done
@@ -165,7 +190,7 @@ if [ "$(cat "$videoListFile".tmp)" != "" ]; then
    echo "Missing metadata for $missingCount video$([ "$missingCount" -gt 1 ] && echo "s")."
    echo "Downloading missing metadata..."
    yt-dlp --skip-download --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
-      -P "$outputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.1 \
+      -P "$userOutputDir/video" -o "%(id)s.%(ext)s" --sleep-interval 0.1 \
       -a "$videoListFile".tmp
 else
    echo "Successfully validated video metadata."
@@ -176,17 +201,12 @@ fi
 ####################
 
 # Make directories and copy files
-
-if [ ! -d "$ttarchiveHome" ]; then
-   mkdir "$ttarchiveHome"
+if [ ! -d "$ttarchiveOutput"/assets ]; then
+   mkdir "$ttarchiveOutput"/assets
 fi
 
-if [ ! -d "$ttarchiveHome"/assets ]; then
-   mkdir "$ttarchiveHome"/assets
-fi
-
-cp "$ttarchiveShare"/home.html "$ttarchiveHome"/index.html
-cp -ur "$ttarchiveShare"/assets "$ttarchiveHome"
+cp "$ttarchiveShare"/home.html "$ttarchiveOutput"/index.html
+cp -ur "$ttarchiveShare"/assets "$ttarchiveOutput"
 
 # Set user link components
 userLinkComponent=$(cat $ttarchiveShare/components/user-link.html | tr -d "\n")
@@ -197,13 +217,13 @@ userThumbRowComponent=$(cat \
 userLinkElements=""
 
 ### Loop through all user directories
-for i in "$ttarchiveHome"/user/@*; do
+for i in "$ttarchiveOutput"/user/@*; do
    currentUsername=$(basename "$i")
 
    # Thumbnails for homepage
    userThumbElements=""
    userThumbRowElements=""
-   cd "$ttarchiveHome"/user/"$currentUsername"
+   cd "$ttarchiveOutput"/user/"$currentUsername"
    thumbnails=$(find video/*.webp -maxdepth 1 -type f -iname "*.webp" | sort \
       | tail -9)
    for j in {1..9}; do
@@ -228,13 +248,13 @@ for i in "$ttarchiveHome"/user/@*; do
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
    # Create HTML for user
-   cp "$ttarchiveShare"/user.html "$ttarchiveHome"/user/"$currentUsername"/index.html
+   cp "$ttarchiveShare"/user.html "$ttarchiveOutput"/user/"$currentUsername"/index.html
 
    videoComponent=$(cat $ttarchiveShare/components/video.html | tr -d "\n")
 
    ### Generate video javascript object
    echo "Generating html for $currentUsername..."
-   cd "$ttarchiveHome"/user/"$currentUsername"/video
+   cd "$ttarchiveOutput"/user/"$currentUsername"/video
 
    for i in *.mp4; do
       # ID
@@ -254,22 +274,22 @@ for i in "$ttarchiveHome"/user/@*; do
             thumbnail: \"./video/"$thumbnail"\",
             username: \"$currentUsername\" },"
 
-      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttarchiveHome"/user/"$currentUsername"/index.html
+      sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$ttarchiveOutput"/user/"$currentUsername"/index.html
    done
 
-   sed -i "s%USERNAME%$currentUsername%g" "$ttarchiveHome"/user/"$currentUsername"/index.html
-   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttarchiveHome"/user/"$currentUsername"/index.html
-   sed -i "s%VIDEO_OBJECTS%%g" "$ttarchiveHome"/user/"$currentUsername"/index.html
+   sed -i "s%USERNAME%$currentUsername%g" "$ttarchiveOutput"/user/"$currentUsername"/index.html
+   sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$ttarchiveOutput"/user/"$currentUsername"/index.html
+   sed -i "s%VIDEO_OBJECTS%%g" "$ttarchiveOutput"/user/"$currentUsername"/index.html
 
-   if [ -f "$ttarchiveHome"/user/"$currentUsername"/index.html ]; then
-      echo "Generated html page for $currentUsername: $ttarchiveHome/user/$currentUsername/index.html"
+   if [ -f "$ttarchiveOutput"/user/"$currentUsername"/index.html ]; then
+      echo "Generated html page for $currentUsername: $ttarchiveOutput/user/$currentUsername/index.html"
    fi
 done
 
-sed -i "s#USER_LINKS#$userLinkElements#g" "$ttarchiveHome"/index.html
+sed -i "s#USER_LINKS#$userLinkElements#g" "$ttarchiveOutput"/index.html
 
-if [ -f "$ttarchiveHome"/index.html ]; then
-   echo "Generated ttarchive home page: $ttarchiveHome/index.html"
+if [ -f "$ttarchiveOutput"/index.html ]; then
+   echo "Generated ttarchive home page: $ttarchiveOutput/index.html"
 fi
 
 # Delete temp file

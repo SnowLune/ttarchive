@@ -1,0 +1,26 @@
+{
+  "name": "ttarchive",
+  "version": "0.1.0",
+  "description": "A content backup/archiver and offline viewing app for TikTok.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SnowLune/ttget.git"
+  },
+  "keywords": [
+    "tiktok"
+  ],
+  "author": "Luna Roberge",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/SnowLune/ttget/issues"
+  },
+  "homepage": "https://github.com/SnowLune/ttget#readme",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
+}

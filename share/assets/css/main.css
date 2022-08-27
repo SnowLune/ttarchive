@@ -71,8 +71,9 @@ h3 {
    font-size: 0.8rem;
 }
 
-.title-bar h1 {
+.username-heading {
    background-color: #000;
+   margin: 0;
 }
 
 a {

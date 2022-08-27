@@ -289,9 +289,9 @@ for i in "$ttarchiveOutput"/user/@*; do
          fi
          
          videoObject="{ id: \"$currentID\", 
-               file: \"./video/"$i"\", 
+               file: \"/user/$currentUsername/video/"$i"\", 
                description: \"unavailable\",
-               thumbnail: \"./video/"$thumbnail"\",
+               thumbnail: \"/user/$currentUsername/video/"$thumbnail"\",
                username: \"$currentUsername\" },"
 
          sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$userPage"

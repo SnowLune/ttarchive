@@ -1,19 +1,25 @@
 // Globals
+var user;
 var touchStartY;
 var touchEndY;
 var videoCollection;
-var favorites;
-var hidden;
+var s_Favorites;
+var s_Hidden;
+var s_Muted;
 
 // Global Elements
 var mainEl = document.getElementById("main");
+var userLinkEl = document.getElementById("user-url");
 var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
 var toTopEl = document.querySelector(".to-top-icon a");
 var toBottomEl = document.querySelector(".to-bottom-icon a");
+var stopEl = document.querySelector(".stop-icon a");
+var muteEl = document.querySelector(".mute-icon a");
 var faveEl = document.querySelector(".favorite-icon a");
 var hideEl = document.querySelector(".hide-icon a");
 
+// Local Storage getters and setters
 function getFavorites() {
    let favorites = JSON.parse(window.localStorage.getItem("favorites"));
    return favorites;
@@ -22,6 +28,52 @@ function getFavorites() {
 function getHidden() {
    let hidden = JSON.parse(window.localStorage.getItem("hidden"));
    return hidden;
+}
+
+function getMuted() {
+   let muted = JSON.parse(window.localStorage.getItem("muted"));
+   return muted;
+}
+
+function setMuted(m) {
+   window.localStorage.setItem("muted", JSON.stringify(m));
+   if (getMuted() !== null) return true;
+   else return false;
+}
+
+function forEachVideo(f) {
+   for (let i = 0; i < videoCollection.length; i++) {
+      f(videoCollection[i]);
+   }
+}
+
+function stopAllVideos() {
+   forEachVideo((video) => {
+      if (video.paused === false) {
+         video.pause();
+         video.currentTime = 0;
+      }
+   });
+}
+
+function toggleMute() {
+   forEachVideo((video) => {
+      if (muteEl.textContent === "volume_up") {
+         video.muted = true;
+         video.defaultMuted = true;
+      } else if (muteEl.textContent === "volume_off") {
+         video.muted = false;
+         video.defaultMuted = false;
+      }
+   });
+
+   if (muteEl.textContent === "volume_up") {
+      muteEl.textContent = "volume_off";
+      setMuted(true);
+   } else {
+      muteEl.textContent = "volume_up";
+      setMuted(false);
+   }
 }
 
 function toggleHidden(videoEl, id) {
@@ -49,6 +101,9 @@ function createLoader() {
 
 function createVideoElement(videoObject) {
    return new Promise((resolve) => {
+      // Set URI strings
+      videoFileURL = `/user/${username}/video/${videoObject.id}.mp4`;
+      thumbnailURL = `/user/${username}/video/${videoObject.id}.webp`;
       // Create <video> element
       // Set class names
       let videoEl = document.createElement("video");
@@ -56,7 +111,7 @@ function createVideoElement(videoObject) {
 
       // Check favorites and hidden, add classes
       // toggleHidden(videoEl, videoObject.id);
-
+      let muted = getMuted();
       let favorites = getFavorites();
       if (favorites && favorites.filter((fave) => fave.id === videoObject.id)) {
          videoEl.classList.add("favorite");
@@ -65,7 +120,7 @@ function createVideoElement(videoObject) {
       if (videoObject.description) videoEl.setAttribute("preload", "none");
       else videoEl.setAttribute("preload", "metadata");
 
-      videoEl.setAttribute("poster", `${videoObject.thumbnail}`);
+      videoEl.setAttribute("poster", thumbnailURL);
       videoEl.setAttribute("playsinline", "true");
       videoEl.setAttribute("x5-playsinline", "true");
       videoEl.setAttribute("webkit-playsinline", "true");
@@ -74,14 +129,17 @@ function createVideoElement(videoObject) {
       videoEl.setAttribute("mediatype", "video");
       videoEl.setAttribute(
          "style",
-         `background-image: url("${videoObject.thumbnail}")\
+         `background-image: url(${thumbnailURL})\
             ; background-repeat: no-repeat\
             ; background-position: center\
             ; background-size: contain`
       );
       videoEl.setAttribute("data-id", videoObject.id);
-      videoEl.setAttribute("src", videoObject.file);
-      // videoEl.controlsList.add("nofullscreen");
+      videoEl.setAttribute("src", videoFileURL);
+      if (muted) {
+         videoEl.muted = true;
+         videoEl.defaultMuted = true;
+      }
       videoMainEl.appendChild(videoEl);
 
       setTimeout(resolve, 0.01);
@@ -93,7 +151,7 @@ async function createVideos(user) {
       let loader = createLoader();
       userStatusEl.appendChild(loader);
 
-      for (let i = 0; i < user.videos.length; i++) {
+      for (let i = user.videos.length - 1; i >= 0; i--) {
          await createVideoElement(user.videos[i]);
          videoCollection = document.getElementsByClassName("video-post");
          loader.innerText = `Loading (${Math.floor(
@@ -116,9 +174,9 @@ function togglePlay(video) {
 
       // Pause playing videos if mobile
       if (isMobile(video)) {
-         for (let i = 0; i < videoCollection.length; i++) {
-            if (videoCollection[i].paused === false) videoCollection[i].pause();
-         }
+         forEachVideo((v) => {
+            if (v.paused === false) v.pause();
+         });
       }
 
       // Load if not loaded before playing so we don't get a black flickering
@@ -142,13 +200,13 @@ function getNearestVideoIndex(opts = { direction: "down" }) {
          }
       }
    } else {
-      for (var i = 0; i < videoCollection.length; i++) {
-         let videoTopDistance = getVideoTopDistance(videoCollection[i]);
+      forEachVideo((video) => {
+         let videoTopDistance = getVideoTopDistance(video);
          if (videoTopDistance < nearestVideoDistance) {
             nearestVideoDistance = videoTopDistance;
             nearestVideo = i;
          }
-      }
+      });
    }
 
    return nearestVideo;
@@ -200,14 +258,14 @@ function keyHandler(event) {
    let nearestVideo;
 
    if (
-      (event.key === "j" || event.key === "ArrowDown") &&
+      (event.key === "j" || event.key === "J" || event.key === "ArrowDown") &&
       getNearestVideoIndex({ direction: "up" }) != videoCollection.length - 1
    ) {
       nearestVideo =
          videoCollection[`${getNearestVideoIndex({ direction: "up" }) + 1}`];
       scrollVideo(nearestVideo);
    } else if (
-      (event.key === "k" || event.key === "ArrowUp") &&
+      (event.key === "k" || event.key === "K" || event.key === "ArrowUp") &&
       getNearestVideoIndex() > 0
    ) {
       nearestVideo = videoCollection[`${getNearestVideoIndex() - 1}`];
@@ -218,7 +276,7 @@ function keyHandler(event) {
          togglePlay(nearestVideo);
          return;
       }
-   } else if (event.key === "f") {
+   } else if (event.key === "f" || event.key === "F") {
       fullscreenCollection =
          videoMainEl.getElementsByClassName("pseudofullscreen");
       if (fullscreenCollection) {
@@ -227,14 +285,14 @@ function keyHandler(event) {
          }
          return;
       } else {
-         for (let i = 0; i < videoCollection.length; i++) {
-            if (videoCollection[i].paused === false) {
+         forEachVideo((video) => {
+            if (video.paused === false) {
                event.target.classList.add("pseudofullscreen");
                event.target.setAttribute("controls", "");
                event.target.play();
-               break;
+               return;
             }
-         }
+         });
          return;
       }
    } else if (event.key === "Home") {
@@ -243,6 +301,10 @@ function keyHandler(event) {
    } else if (event.key === "End") {
       nearestVideo = videoCollection[`${videoCollection.length - 1}`];
       scrollVideo(nearestVideo);
+   } else if (event.key === "s" || event.key === "S") {
+      stopAllVideos();
+   } else if (event.key === "m" || event.key === "M") {
+      toggleMute();
    } else return;
 
    // We scrolled with keys to get here
@@ -261,8 +323,20 @@ function toBottomHandler(event) {
    videoMainEl.scroll({
       top: videoMainEl.scrollHeight,
       left: 0,
-      behavior: "smooth",
+      behavior: "smooth"
    });
+}
+
+function stopHandler(event) {
+   event.preventDefault();
+
+   stopAllVideos();
+}
+
+function muteHandler(event) {
+   event.preventDefault();
+
+   toggleMute();
 }
 
 function favoriteHandler(event) {
@@ -279,7 +353,7 @@ function favoriteHandler(event) {
    }
 
    if (video) {
-      let favorites = JSON.parse(window.localStorage.getItem("favorites"));
+      let favorites = getFavorites();
 
       if (!favorites) favorites = [];
 
@@ -366,6 +440,8 @@ function touchHandler(event) {
 
 toTopEl.addEventListener("click", toTopHandler);
 toBottomEl.addEventListener("click", toBottomHandler);
+stopEl.addEventListener("click", stopHandler);
+muteEl.addEventListener("click", muteHandler);
 faveEl.addEventListener("click", favoriteHandler);
 hideEl.addEventListener("click", hideHandler);
 
@@ -376,9 +452,45 @@ videoMainEl.addEventListener("touchend", touchHandler);
 
 document.addEventListener("keydown", keyHandler);
 
-// Load videos after initial content is rendered
-window.addEventListener("load", () => {
-   createVideos(user);
-   favorites = getFavorites();
-   hidden = getHidden();
+// Ready
+window.addEventListener("DOMContentLoaded", () => {
+   userLinkEl.setAttribute("href", `https://tiktok.com/${username}`);
+   document.querySelector(".username-heading").textContent = username;
+
+   fetch(`./${username}/videos.json`)
+      .then((res) => {
+         if (res.ok) {
+            return res.json();
+         }
+      })
+      .then((data) => (user = data))
+      .then((userData) => {
+         user.videos.forEach((videoObject) => {
+            if (videoObject?.uploader_id) {
+               user.id = videoObject.uploader_id;
+               userLinkEl.setAttribute("href", `https://tiktok.com/@${user.id}`);
+               return;
+            } else if (user?.id === undefined) {
+               user.id = "";
+            }
+         });
+
+         // Create Video Elements from user.videos array
+         createVideos(userData);
+      })
+      .catch((err) => {
+         throw err;
+      });
+
+   s_Favorites = getFavorites();
+   s_Hidden = getHidden();
+   s_Muted = getMuted();
+   if (s_Muted) {
+      muteEl.textContent = "volume_off";
+   } else {
+      muteEl.textContent = "volume_up";
+   }
 });
+
+// Load videos after initial content is rendered
+window.addEventListener("load", () => {});

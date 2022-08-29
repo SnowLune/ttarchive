@@ -75,6 +75,10 @@ span.material-symbols-rounded a {
 .unhide-icon {
    display: none;
 }
+/* 
+.stop-icon {
+   display: none;
+} */
 
 @media screen and (min-width: 600px) {
 }

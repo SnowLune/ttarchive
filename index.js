@@ -1,34 +1,51 @@
-const express = require("express");
-const path = require("path");
-const { exit } = require("process");
-const app = express();
+import * as fs from "node:fs/promises";
+import path from "node:path";
+import { exit } from "process";
 
-const output = process.env.ttarchiveOutput;
-
+var output = process.env.ttarchiveOutput;
 if (!output) exit();
 
-const PORT = process.env.PORT || 3000;
+const userDir = path.join(output, "user");
+var users = [];
 
-// Remove trailing "/"
-app.use((req, res, next) => {
-   if (req.path.at(-1) === "/" && req.path.length > 1) {
-      const query = req.url.slice(req.path.length);
-      res.redirect(301, req.path.slice(0, -1) + query);
-   } else {
-      next();
-   }
-});
+function createVideoJSON(userDirectory) {
+   var user = { videos: [] };
 
-app.use(express.static(output, { redirect: false }));
+   fs.readdir(path.join(userDir, userDirectory, "video"), (err, files) => {
+      if (err) throw err;
+      else return files;
+   })
+      .then((files) => {
+         return files.filter((fileName) => fileName.endsWith("json")).reverse();
+      })
+      .then((jsonFiles) => {
+         jsonFiles.forEach((jsonFilename) => {
+            let jsonPath = path.join(
+               userDir,
+               userDirectory,
+               "video",
+               jsonFilename
+            );
+            console.log(jsonPath);
+            fs.readFile(jsonPath, { encoding: "utf8" })
+               .then((data) => {
+                  user.videos.push(JSON.parse(data));
+               })
+               .catch((err) => {
+                  throw err;
+               });
+         });
+      })
+      .then((user) => {
+         console.dir(user);
+      });
+}
 
-app.get("/user/:username", (req, res) => {
-   res.sendFile(output + "/user/" + req.params.username + "/index.html");
-});
-
-app.get("/", (req, res) => {
-   res.sendFile("index.html");
-});
-
-app.listen(PORT, () => {
-   console.log("Started server on port " + PORT);
-});
+fs.readdir(userDir, (err, files) => {
+   if (err) throw err;
+   else return files;
+})
+   .then((files) => (users = files.filter((dirname) => dirname.at(0) === "@")))
+   .then(() => {
+      users.forEach(createVideoJSON);
+   });

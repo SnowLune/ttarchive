@@ -9,47 +9,51 @@
    <link rel="stylesheet" href="../../assets/css/font.css" />
    <link rel="stylesheet" href="../../assets/css/main.css" />
    <link rel="stylesheet" href="../../assets/css/user.css" />
+   <script defer src="../../assets/js/user.js"></script>
 </head>
 
 <body>
    <main id="main">
       <header class="title-bar">
-         <span class="material-symbols-rounded home-icon"><a href="../.." title="Home"> home </a></span>
+         <span class="material-symbols-rounded home-icon"><a href="../.." title="Home">home</a></span>
          <div class="username-status">
-            <a href="https://tiktok.com/USERNAME" target="_blank">
-               <h1 class="username-heading">USERNAME</h1>
+            <a href="" target="_blank" id="user-url">
+               <h1 class="username-heading"></h1>
             </a>
          </div>
 
          <div class="controls">
+            <span class="material-symbols-rounded stop-icon">
+               <a href="" title="Stop">stop</a>
+            </span>
+            <span class="material-symbols-rounded mute-icon">
+               <a href="" title="Mute"></a>
+            </span>
             <span class="material-symbols-rounded favorite-icon">
-               <a href="" title="Favorite"> favorite </a>
+               <a href="" title="Favorite">favorite</a>
             </span>
             <span class="material-symbols-rounded hide-icon">
-               <a href="" title="Hide"> visibility_off </a>
+               <a href="" title="Hide">visibility_off</a>
             </span>
             <span class="material-symbols-rounded delete-icon">
-               <a href="" title="Delete"> delete </a>
+               <a href="" title="Delete">delete</a>
             </span>
             <span class="material-symbols-rounded to-top-icon">
-               <a href="" title="Go To Top"> north </a>
+               <a href="" title="Go To Top">north</a>
             </span>
             <span class="material-symbols-rounded to-bottom-icon">
-               <a href="" title="Go To Bottom"> south </a>
+               <a href="" title="Go To Bottom">south</a>
             </span>
             <span class="material-symbols-rounded unhide-icon">
-               <a href="" title=""> visibility </a>
+               <a href="" title="">visibility</a>
             </span>
          </div>
       </header>
       <div class="video-main"></div>
    </main>
    <script>
-      const user = {
-         videos: [VIDEO_OBJECTS],
-      };
+      const username = "USERNAME";
    </script>
-   <script src="../../assets/js/user.js"></script>
 </body>
 
 </html>

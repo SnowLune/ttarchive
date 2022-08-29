@@ -258,7 +258,9 @@ for i in "$ttarchiveOutput"/user/@*; do
       -e "s#PREVIEW_ROWS#$userThumbRowElements#")
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
+   #
    # Create HTML for user
+   #
    templateUserPage="$ttarchiveShare"/user.html
    userPage="$userDir"/index.html
 
@@ -270,42 +272,52 @@ for i in "$ttarchiveOutput"/user/@*; do
       # Copy template
       cp "$templateUserPage" "$userPage"
 
-      videoComponent=$(cat $ttarchiveShare/components/video.html | tr -d "\n")
+      # Create videos.json
+      userVideosJSON="$userDir"/videos.json
+      cat "$ttarchiveShare"/videos.json | tr "\n" " " \
+         | sed 's/].*$//' > "$userVideosJSON"
 
       ### Generate video javascript object
-      echo "Generating html for $currentUsername..."
+      echo "Generating videos.json for $currentUsername..."
       cd "$userVideoDir"
 
+      # Last mp4 file in list
+      lastMp4=$(ls -1 *.mp4 | tail -1)
+
+      # For each video file
       for i in *.mp4; do
          # ID
          currentID=$(basename -s .mp4 "$i")
-         # Thumbnail
-         thumbnail=$(echo $i | sed 's#mp4#webp#')
-         # Description
-         if [ -f "$currentID".description ]; then
-            description=$(cat "$currentID".description | tr "\n" " ")
-         else
-            description=""
-         fi
          
-         videoObject="{ id: \"$currentID\", 
-               file: \"/user/$currentUsername/video/"$i"\", 
-               description: \"unavailable\",
-               thumbnail: \"/user/$currentUsername/video/"$thumbnail"\",
-               username: \"$currentUsername\" },"
+         # Copy contents of info.json into videos.json
+         if [ -f "$currentID".info.json ]; then
+            cat "$currentID".info.json >> "$userVideosJSON"
+         else
+            echo "ERROR: missing $currentID.info.json"
+            echo "Using workaround..."
+            if [ -f "$currentID".description ]; then
+               description=$(cat "$currentID".description | tr "\n" " ")
+            else
+               description=""
+            fi
+            echo -n "{\"id\": \"$currentID\"," \
+               "\"description\": \"$description\"}" >> "$userVideosJSON"
+         fi
 
-         sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$userPage"
+         if [ "$i" != "$lastMp4" ]; then
+               echo -n "," >> "$userVideosJSON"
+         fi
       done
 
+      echo -n "]}" >> "$userVideosJSON"
+
       sed -i "s%USERNAME%$currentUsername%g" "$userPage"
-      sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$userPage"
-      sed -i "s%VIDEO_OBJECTS%%g" "$userPage"
 
       if [ -f "$userPage" ]; then
          echo "Generated html page for $currentUsername: "$userPage""
       fi
    else
-      echo "Archive page for $currentUsername is already up to date."
+      echo "JSON for $currentUsername is already up to date."
    fi
 done
 

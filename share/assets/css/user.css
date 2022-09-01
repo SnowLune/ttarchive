@@ -1,21 +1,30 @@
 .video-main {
+   position: fixed;
+   bottom: 0;
    display: flex;
+   flex-direction: row;
    justify-content: center;
    align-items: center;
    flex-wrap: wrap;
    background-color: #000;
-   height: calc(100vh - var(--title-bar-height));
+   height: calc(100vh - var(--title-bar-height) * 2);
    overflow-y: scroll;
    scroll-snap-type: y mandatory;
 }
 
 .video-post {
-   height: 100%;
-   width: 100vw;
+   height: 25%;
+   width: min-content;
    margin: 0px;
    background-color: #000;
-   scroll-snap-align: center;
+   scroll-snap-align: start;
    scroll-snap-stop: always;
+}
+
+.mobile-full > .video-post {
+   margin: 0;
+   height: 100%;
+   width: 100vw;
 }
 
 .home-icon {
@@ -29,11 +38,12 @@ span.material-symbols-rounded a {
 }
 
 .controls {
-   position: absolute;
-   right: 5vw;
    display: flex;
    justify-content: center;
    align-items: center;
+   width: 100%;
+   height: var(--title-bar-height);
+   background-color: #000;
 }
 
 .controls .material-symbols-rounded {
@@ -47,17 +57,10 @@ span.material-symbols-rounded a {
    flex-direction: column;
 }
 
-.username-status > h1,
-.username-status > h2,
-.username-status > h3 {
+.username-status>h1,
+.username-status>h2,
+.username-status>h3 {
    margin: 0;
-}
-
-.pseudofullscreen {
-   position: fixed;
-   top: 0;
-   width: 100vw;
-   height: 100vh;
 }
 
 .favorite {
@@ -76,8 +79,12 @@ span.material-symbols-rounded a {
    display: none;
 }
 
-@media screen and (min-width: 600px) {
-}
+/* 
+.stop-icon {
+   display: none;
+} */
+
+@media screen and (min-width: 600px) {}
 
 @media screen and (min-width: 768px) {
    .video-main {
@@ -85,18 +92,16 @@ span.material-symbols-rounded a {
    }
 
    .video-post {
-      width: inherit;
+      height: 50%;
       margin: 5px;
-   }
-
-   .pseudofullscreen {
-      width: 100vw;
-      margin: 0;
+      scroll-snap-align: center;
    }
 }
 
 @media screen and (min-width: 992px) {
+   .video-post {
+      height: 100%;
+   }
 }
 
-@media screen and (min-width: 1200px) {
-}
+@media screen and (min-width: 1200px) {}

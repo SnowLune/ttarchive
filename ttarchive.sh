@@ -8,18 +8,21 @@ else
    while true; do
       read -p "Config file does not exist, would you like to create it? (y/n): " createConfig
       case $createConfig in
-         [Yy]* ) 
-            echo "ttarchiveOutput=~/ttarchive" > $ttarchiveConfig
-            if [ -f $ttarchiveConfig ]; then
-               echo "Config file created: $ttarchiveConfig"
-               . $ttarchiveConfig
-            else
-               echo "ERROR: Error creating config file."
-            fi
-            break;;
-         [Nn]* ) 
-            echo "Warning: ttarchive will fail if \"ttarchiveOutput\" is not set."; break;;
-         * ) echo "Please answer yes or no.";;
+      [Yy]*)
+         echo "ttarchiveOutput=~/ttarchive" >$ttarchiveConfig
+         if [ -f $ttarchiveConfig ]; then
+            echo "Config file created: $ttarchiveConfig"
+            . $ttarchiveConfig
+         else
+            echo "ERROR: Error creating config file."
+         fi
+         break
+         ;;
+      [Nn]*)
+         echo "Warning: ttarchive will fail if \"ttarchiveOutput\" is not set."
+         break
+         ;;
+      *) echo "Please answer yes or no." ;;
       esac
    done
 fi
@@ -67,7 +70,7 @@ if [ ! -f "$1" ]; then
          echo "Please save a new HTML page for $1 . Exiting..."
          exit 1
       fi
-   
+
    else
       echo "ERROR: No user directory for $1 found."
       echo "Please save a new HTML page for $1 . Exiting..."
@@ -78,7 +81,7 @@ else
 fi
 
 # Set username from input filename
-username=`ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.url.list%%'`
+username=$(ls "$inputFile" | sed -e 's%^.*@%@%' -e 's%).*$%%' -e 's%.url.list%%')
 
 # Check if filename gave us a valid username
 if [ "$username" = "" ] || [ "${username:0:1}" != "@" ]; then
@@ -128,28 +131,28 @@ fi
 # List of video URLs grepped from the user's TikTok webapp page
 videoList=$(grep -o -E "https://www.tiktok.com/$username/video/[[:digit:]]+" "$inputFile")
 videoListFile="$userOutputDir"/"$username".url.list
-echo $videoList | tr " " "\n" > "$videoListFile"
+echo $videoList | tr " " "\n" >"$videoListFile"
 
 # Create list of mp4s
 localVideoFiles=$(find "$userOutputDir"/video -maxdepth 1 -type f -iregex ".*.mp4")
 
-for i in $localVideoFiles; do 
+for i in $localVideoFiles; do
    # Cut out ID
    currentID=$(basename -s .mp4 "$i")
-   
+
    if [[ "$currentID" != "" ]]; then
       echo "Found $username video: $currentID"
 
       # Remove videos from videoList
-      tempVideoList=$(echo $videoList \
-         | sed "s#https://www.tiktok.com/$username/video/$currentID##")
+      tempVideoList=$(echo $videoList |
+         sed "s#https://www.tiktok.com/$username/video/$currentID##")
 
       # Save videoList
       videoList=$tempVideoList
    fi
 done
 
-echo $videoList | tr " " "\n" > "$videoListFile".tmp
+echo $videoList | tr " " "\n" >"$videoListFile".tmp
 
 if [ "$videoList" != "" ]; then
    echo -n "Found $(echo $videoList | tr " " "\n" | sed '/^$/d' | wc -l) "
@@ -168,10 +171,10 @@ fi
 # Check metadata
 echo "Validating metadata using primary video list..."
 # Overwrite temp file
-echo -n "" > "$videoListFile".tmp
+echo -n "" >"$videoListFile".tmp
 
 function addToMissingMetadataList {
-   echo "$i" >> "$videoListFile".tmp
+   echo "$i" >>"$videoListFile".tmp
 }
 
 for i in $(cat "$videoListFile" | sed '/^$/d'); do
@@ -187,7 +190,7 @@ for i in $(cat "$videoListFile" | sed '/^$/d'); do
 done
 
 if [ "$(cat "$videoListFile".tmp)" != "" ]; then
-   missingCount=$(cat "$videoListFile".tmp | sed '/^$/d' |  wc -l)
+   missingCount=$(cat "$videoListFile".tmp | sed '/^$/d' | wc -l)
    echo "Missing metadata for $missingCount video$([ "$missingCount" -gt 1 ] && echo "s")."
    echo "Downloading missing metadata..."
    yt-dlp --skip-download --write-thumbnail --write-description --write-info-json --no-mtime --no-overwrites \
@@ -211,8 +214,8 @@ cp -ur "$ttarchiveShare"/assets "$ttarchiveOutput"
 
 # Set user link components
 userLinkComponent=$(cat $ttarchiveShare/components/user-link.html | tr -d "\n")
-userThumbComponent=$(cat $ttarchiveShare/components/user-preview-image.html \
-   | tr -d "\n")
+userThumbComponent=$(cat $ttarchiveShare/components/user-preview-image.html |
+   tr -d "\n")
 userThumbRowComponent=$(cat \
    $ttarchiveShare/components/user-gallery-preview-row.html | tr -d "\n")
 userLinkElements=""
@@ -235,17 +238,17 @@ for i in "$ttarchiveOutput"/user/@*; do
    userThumbElements=""
    userThumbRowElements=""
    cd "$userDir"
-   thumbnails=$(find video/*.webp -maxdepth 1 -type f -iname "*.webp" | sort \
-      | tail -9)
+   thumbnails=$(find video/*.webp -maxdepth 1 -type f -iname "*.webp" | sort |
+      tail -9)
    for j in {1..9}; do
       previewThumb=$(echo $thumbnails | tr " " "\n" | sed -n "$j"p)
       if [ "$previewThumb" = "" ]; then break; fi
-      
+
       tempUserThumbElements=$userThumbElements
       newUserThumbElement=$(echo "$userThumbComponent" | sed "s#THUMBNAIL_URI#./user/$currentUsername/$previewThumb#")
       userThumbElements="$newUserThumbElement""$tempUserThumbElements"
 
-      if [ $(($j % 3)) -eq 0  ]; then
+      if [ $(($j % 3)) -eq 0 ]; then
          tempUserThumbRowElements=$userThumbRowElements
          newUserThumbRowElement=$(echo $userThumbRowComponent | sed "s#PREVIEW_IMAGES#$userThumbElements#")
          userThumbRowElements="$newUserThumbRowElement""$tempUserThumbRowElements"
@@ -258,54 +261,71 @@ for i in "$ttarchiveOutput"/user/@*; do
       -e "s#PREVIEW_ROWS#$userThumbRowElements#")
    userLinkElements="$tempUserLinkElements""$newUserLink"
 
+   #
    # Create HTML for user
+   #
    templateUserPage="$ttarchiveShare"/user.html
    userPage="$userDir"/index.html
 
-   if [ "$templateUserPage" -nt "$userPage" ] \
-      || [ "$(ls -1 "$userVideoDir")" != "$(cat "$userVideoFileList")" ]; then
-      # Create new video file list
-      ls -1 "$userVideoDir" > "$userVideoFileList"
-
+   if [ "$templateUserPage" -nt "$userPage" ]; then
       # Copy template
       cp "$templateUserPage" "$userPage"
 
-      videoComponent=$(cat $ttarchiveShare/components/video.html | tr -d "\n")
+      sed -i "s%USERNAME%$currentUsername%g" "$userPage"
+
+      if [ -f "$userPage" ]; then
+         echo "Generated new html page for $currentUsername: "$userPage""
+      fi
+   fi
+
+   if [ "$(ls -1 "$userVideoDir")" != "$(cat "$userVideoFileList")" ]; then
+      # Create new video file list
+      ls -1 "$userVideoDir" >"$userVideoFileList"
+
+      # Create videos.json
+      userVideosJSON="$userDir"/videos.json
+      cat "$ttarchiveShare"/videos.json | tr "\n" " " |
+         sed 's/].*$//' >"$userVideosJSON"
 
       ### Generate video javascript object
-      echo "Generating html for $currentUsername..."
+      echo "Generating videos.json for $currentUsername..."
       cd "$userVideoDir"
 
+      # Last mp4 file in list
+      lastMp4=$(ls -1 *.mp4 | tail -1)
+
+      # For each video file
       for i in *.mp4; do
          # ID
          currentID=$(basename -s .mp4 "$i")
-         # Thumbnail
-         thumbnail=$(echo $i | sed 's#mp4#webp#')
-         # Description
-         if [ -f "$currentID".description ]; then
-            description=$(cat "$currentID".description | tr "\n" " ")
-         else
-            description=""
-         fi
-         
-         videoObject="{ id: \"$currentID\", 
-               file: \"./video/"$i"\", 
-               description: \"unavailable\",
-               thumbnail: \"./video/"$thumbnail"\",
-               username: \"$currentUsername\" },"
 
-         sed -i "s%VIDEO_OBJECTS%VIDEO_OBJECTS$(echo $videoObject)%" "$userPage"
+         # Copy contents of info.json into videos.json
+         if [ -f "$currentID".info.json ]; then
+            cat "$currentID".info.json >>"$userVideosJSON"
+         else
+            echo "ERROR: missing $currentID.info.json"
+            echo "Using workaround..."
+            if [ -f "$currentID".description ]; then
+               description=$(cat "$currentID".description | tr "\n" " ")
+            else
+               description=""
+            fi
+            echo -n "{\"id\": \"$currentID\"," \
+               "\"description\": \"$description\"}" >>"$userVideosJSON"
+         fi
+
+         if [ "$i" != "$lastMp4" ]; then
+            echo -n "," >>"$userVideosJSON"
+         fi
       done
 
-      sed -i "s%USERNAME%$currentUsername%g" "$userPage"
-      sed -i "s%VIDEO_MAIN_ELEMENTS%%g" "$userPage"
-      sed -i "s%VIDEO_OBJECTS%%g" "$userPage"
+      echo -n "]}" >>"$userVideosJSON"
 
       if [ -f "$userPage" ]; then
          echo "Generated html page for $currentUsername: "$userPage""
       fi
    else
-      echo "Archive page for $currentUsername is already up to date."
+      echo "'videos.json' for $currentUsername is already up to date."
    fi
 done
 

@@ -1,8 +1,12 @@
+// Global Constants
+const MOBILE_BREAK = 768;
+
 // Globals
 var user;
 var touchStartY;
 var touchEndY;
-var videoCollection;
+var loading;
+var scrollTimeout;
 var s_Favorites;
 var s_Hidden;
 var s_Muted;
@@ -14,6 +18,7 @@ var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
 var toTopEl = document.querySelector(".to-top-icon a");
 var toBottomEl = document.querySelector(".to-bottom-icon a");
+var exitfsEl = document.querySelector(".exitfs-icon a");
 var stopEl = document.querySelector(".stop-icon a");
 var muteEl = document.querySelector(".mute-icon a");
 var faveEl = document.querySelector(".favorite-icon a");
@@ -41,9 +46,16 @@ function setMuted(m) {
    else return false;
 }
 
-function forEachVideo(f) {
-   for (let i = 0; i < videoCollection.length; i++) {
-      f(videoCollection[i]);
+// Loop through each video element in videoMainEl
+function forEachVideo(f, direction = "forward") {
+   if (direction === "reverse") {
+      for (let index = videoMainEl.childElementCount - 1; index >= 0; index--) {
+         f(videoMainEl.children[index], index);
+      }
+   } else {
+      for (let index = 0; index < videoMainEl.childElementCount; index++) {
+         f(videoMainEl.children[index], index);
+      }
    }
 }
 
@@ -73,6 +85,31 @@ function toggleMute() {
    } else {
       muteEl.textContent = "volume_up";
       setMuted(false);
+   }
+}
+
+function isFullscreen() {
+   if (videoMainEl.classList.contains("mobile-full")) return true;
+   else return false;
+}
+
+function enterFullscreen() {
+   if (videoMainEl.classList.contains("mobile-full") === false)
+      videoMainEl.classList.add("mobile-full");
+   else return;
+}
+
+function exitFullscreen() {
+   if (videoMainEl.classList.contains("mobile-full") === true)
+      videoMainEl.classList.remove("mobile-full");
+   else return;
+}
+
+function toggleFullscreen() {
+   if (!isFullscreen()) {
+      enterFullscreen();
+   } else {
+      exitFullscreen();
    }
 }
 
@@ -117,9 +154,7 @@ function createVideoElement(videoObject) {
          videoEl.classList.add("favorite");
       }
 
-      if (videoObject.description) videoEl.setAttribute("preload", "none");
-      else videoEl.setAttribute("preload", "metadata");
-
+      videoEl.setAttribute("preload", "metadata");
       videoEl.setAttribute("poster", thumbnailURL);
       videoEl.setAttribute("playsinline", "true");
       videoEl.setAttribute("x5-playsinline", "true");
@@ -139,6 +174,9 @@ function createVideoElement(videoObject) {
       if (muted) {
          videoEl.muted = true;
          videoEl.defaultMuted = true;
+      } else {
+         videoEl.muted = false;
+         videoEl.defaultMuted = false;
       }
       videoMainEl.appendChild(videoEl);
 
@@ -153,9 +191,8 @@ async function createVideos(user) {
 
       for (let i = user.videos.length - 1; i >= 0; i--) {
          await createVideoElement(user.videos[i]);
-         videoCollection = document.getElementsByClassName("video-post");
          loader.innerText = `Loading (${Math.floor(
-            (videoCollection.length / user.videos.length) * 100
+            (videoMainEl.childElementCount / user.videos.length) * 100
          )}%)`;
       }
 
@@ -165,22 +202,14 @@ async function createVideos(user) {
    }
 }
 
-function togglePlay(video) {
-   if (video.paused) {
-      // Check if it's a favorite
-      // if (favorites.filter((faveVideo) => faveVideo.id === video.id))
-      //    faveEl.setAttribute("style", "color: red");
-      // else faveEl.removeAttribute("style");
-
+function togglePlay(video, forcePlay) {
+   if (video.paused || forcePlay === true) {
       // Pause playing videos if mobile
-      if (isMobile(video)) {
+      if (isFullscreen()) {
          forEachVideo((v) => {
             if (v.paused === false) v.pause();
          });
       }
-
-      // Load if not loaded before playing so we don't get a black flickering
-      if (video.duration === NaN) video.load();
       video.play();
    } else video.pause();
 }
@@ -190,26 +219,23 @@ function getNearestVideoIndex(opts = { direction: "down" }) {
    var nearestVideoDistance = 10 ** 10;
    var nearestVideo;
 
-   if (opts.direction === "up") {
-      for (var i = videoCollection.length - 1; i >= 0; i--) {
-         let videoTopDistance = getVideoTopDistance(videoCollection[i]);
+   forEachVideo(
+      (video, i) => {
+         let videoTopDistance = getVideoTopDistance(video);
 
          if (videoTopDistance < nearestVideoDistance) {
             nearestVideoDistance = videoTopDistance;
             nearestVideo = i;
          }
-      }
-   } else {
-      forEachVideo((video) => {
-         let videoTopDistance = getVideoTopDistance(video);
-         if (videoTopDistance < nearestVideoDistance) {
-            nearestVideoDistance = videoTopDistance;
-            nearestVideo = i;
-         }
-      });
-   }
+      },
+      opts.direction === "up" ? "reverse" : "forward"
+   );
 
    return nearestVideo;
+}
+
+function getNearestVideo(offset = 0) {
+   return videoMainEl.children[`${getNearestVideoIndex() + offset}`];
 }
 
 function getVideoTopDistance(video) {
@@ -217,23 +243,19 @@ function getVideoTopDistance(video) {
    return videoTopDistance;
 }
 
-function getNearestVideo(videos, offset = 0) {
-   return videos[`${getNearestVideoIndex() + offset}`];
+function scrollVideo(videoEl, behavior) {
+   videoEl.scrollIntoView({ behavior: behavior || "smooth", block: "center" });
 }
 
-function scrollVideo(videoEl) {
-   videoEl.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-function isMobile(video) {
-   if (window.innerWidth < video.clientWidth * 2) return true;
+function isMobile() {
+   if (window.innerWidth < MOBILE_BREAK) return true;
    else return false;
 }
 
 function mobileScroll(videos, scrollStart, scrollStop) {
    let nearestVideo = getNearestVideo(videos);
 
-   if (!isMobile(nearestVideo)) {
+   if (!isMobile()) {
       return;
    }
 
@@ -248,83 +270,65 @@ function mobileScroll(videos, scrollStart, scrollStop) {
       }
 
       scrollVideo(nearestVideo);
-      if (nearestVideo.paused) setTimeout(() => togglePlay(nearestVideo), 200);
+      if (nearestVideo.paused) setTimeout(() => togglePlay(nearestVideo), 100);
    }
 }
 
 function keyHandler(event) {
    event.preventDefault();
 
+   const upKeys = ["k", "K", "ArrowUp"];
+   const downKeys = ["j", "J", "ArrowDown"];
+
    let nearestVideo;
 
    if (
-      (event.key === "j" || event.key === "J" || event.key === "ArrowDown") &&
-      getNearestVideoIndex({ direction: "up" }) != videoCollection.length - 1
+      downKeys.includes(event.key) &&
+      getNearestVideoIndex({ direction: "up" }) !=
+         videoMainEl.childElementCount - 1
    ) {
       nearestVideo =
-         videoCollection[`${getNearestVideoIndex({ direction: "up" }) + 1}`];
+         videoMainEl.children[
+            `${getNearestVideoIndex({ direction: "up" }) + 1}`
+         ];
       scrollVideo(nearestVideo);
-   } else if (
-      (event.key === "k" || event.key === "K" || event.key === "ArrowUp") &&
-      getNearestVideoIndex() > 0
-   ) {
-      nearestVideo = videoCollection[`${getNearestVideoIndex() - 1}`];
+   } else if (upKeys.includes(event.key) && getNearestVideoIndex() > 0) {
+      nearestVideo = videoMainEl.children[`${getNearestVideoIndex() - 1}`];
       scrollVideo(nearestVideo);
    } else if (event.key === " ") {
-      nearestVideo = videoCollection[`${getNearestVideoIndex()}`];
-      if (isMobile(nearestVideo)) {
+      nearestVideo = videoMainEl.children[`${getNearestVideoIndex()}`];
+      if (isFullscreen()) {
          togglePlay(nearestVideo);
          return;
       }
-   } else if (event.key === "f" || event.key === "F") {
-      fullscreenCollection =
-         videoMainEl.getElementsByClassName("pseudofullscreen");
-      if (fullscreenCollection) {
-         for (let i = 0; i < fullscreenCollection.length; i++) {
-            fullscreenCollection[i].classList.remove("pseudofullscreen");
-         }
-         return;
-      } else {
-         forEachVideo((video) => {
-            if (video.paused === false) {
-               event.target.classList.add("pseudofullscreen");
-               event.target.setAttribute("controls", "");
-               event.target.play();
-               return;
-            }
-         });
-         return;
-      }
    } else if (event.key === "Home") {
-      nearestVideo = videoCollection[0];
+      nearestVideo = videoMainEl.firstElementChild;
       scrollVideo(nearestVideo);
    } else if (event.key === "End") {
-      nearestVideo = videoCollection[`${videoCollection.length - 1}`];
+      nearestVideo = videoMainEl.lastElementChild;
       scrollVideo(nearestVideo);
+   } else if (event.key === "Escape") {
+      if (isFullscreen()) exitFullscreen();
    } else if (event.key === "s" || event.key === "S") {
       stopAllVideos();
    } else if (event.key === "m" || event.key === "M") {
       toggleMute();
    } else return;
-
-   // We scrolled with keys to get here
-   if (!nearestVideo) nearestVideo = getNearestVideo(videoCollection);
-   if (isMobile(nearestVideo) && nearestVideo.paused)
-      setTimeout(() => togglePlay(nearestVideo), 200);
 }
 
 function toTopHandler(event) {
    event.preventDefault();
-   videoMainEl.scroll({ top: 0, left: 0, behavior: "smooth" });
+   scrollVideo(videoMainEl.firstElementChild);
 }
 
 function toBottomHandler(event) {
    event.preventDefault();
-   videoMainEl.scroll({
-      top: videoMainEl.scrollHeight,
-      left: 0,
-      behavior: "smooth"
-   });
+   scrollVideo(videoMainEl.lastElementChild);
+}
+
+function exitfsHandler(event) {
+   event.preventDefault();
+   exitFullscreen();
 }
 
 function stopHandler(event) {
@@ -341,7 +345,7 @@ function muteHandler(event) {
 
 function favoriteHandler(event) {
    event.preventDefault();
-   nearestVideo = getNearestVideo(videoCollection);
+   nearestVideo = getNearestVideo(videoMainEl.children);
    id = nearestVideo.getAttribute("data-id");
    let video;
 
@@ -370,7 +374,7 @@ function favoriteHandler(event) {
 function hideHandler(event) {
    event.preventDefault();
 
-   nearestVideo = getNearestVideo(videoCollection);
+   nearestVideo = getNearestVideo(videoMainEl.children);
    id = nearestVideo.getAttribute("data-id");
    let video;
 
@@ -406,27 +410,26 @@ function clickHandler(event) {
    if (event.target.tagName !== "VIDEO") return;
 
    if (event.target.paused) {
-      scrollVideo(event.target);
+      if (!isFullscreen()) {
+         enterFullscreen();
+         scrollVideo(event.target, "auto");
+         // Play is implicit with the scroll so we return
+         return;
+      }
    }
    togglePlay(event.target);
 }
 
-function doubleClickHandler(event) {
-   event.stopImmediatePropagation();
+function scrollHandler() {
+   if (isFullscreen()) {
+      if (scrollTimeout) {
+         clearInterval(scrollTimeout);
+      }
 
-   let classList = [...event.target.classList];
-
-   fullscreenCollection =
-      videoMainEl.getElementsByClassName("pseudofullscreen");
-   for (let i = 0; i < fullscreenCollection.length; i++) {
-      fullscreenCollection[i].classList.remove("pseudofullscreen");
-   }
-
-   if (!classList.includes("pseudofullscreen")) {
-      event.target.classList.add("pseudofullscreen");
-      event.target.setAttribute("controls", "");
-      // event.target.play();
-   }
+      scrollTimeout = setTimeout(() => {
+         togglePlay(getNearestVideo(), true);
+      }, 100);
+   } else return;
 }
 
 function touchHandler(event) {
@@ -434,21 +437,28 @@ function touchHandler(event) {
       touchStartY = videoMainEl.scrollTop;
    } else if (event.type === "touchend") {
       touchEndY = videoMainEl.scrollTop;
-      mobileScroll(videoCollection, touchStartY, touchEndY);
+      mobileScroll(videoMainEl.children, touchStartY, touchEndY);
    }
+}
+
+function mouseoverHandler(event) {
+   let video = event.target;
+   if (video.paused) togglePlay(video);
 }
 
 toTopEl.addEventListener("click", toTopHandler);
 toBottomEl.addEventListener("click", toBottomHandler);
+exitfsEl.addEventListener("click", exitfsHandler);
 stopEl.addEventListener("click", stopHandler);
 muteEl.addEventListener("click", muteHandler);
 faveEl.addEventListener("click", favoriteHandler);
 hideEl.addEventListener("click", hideHandler);
 
 videoMainEl.addEventListener("click", clickHandler);
-//videoMainEl.addEventListener("dblclick", doubleClickHandler);
-videoMainEl.addEventListener("touchstart", touchHandler);
-videoMainEl.addEventListener("touchend", touchHandler);
+videoMainEl.addEventListener("scroll", scrollHandler);
+// videoMainEl.addEventListener("touchstart", touchHandler);
+// videoMainEl.addEventListener("touchend", touchHandler);
+// videoMainEl.addEventListener("mouseover", mouseoverHandler);
 
 document.addEventListener("keydown", keyHandler);
 
@@ -468,7 +478,10 @@ window.addEventListener("DOMContentLoaded", () => {
          user.videos.forEach((videoObject) => {
             if (videoObject?.uploader_id) {
                user.id = videoObject.uploader_id;
-               userLinkEl.setAttribute("href", `https://tiktok.com/@${user.id}`);
+               userLinkEl.setAttribute(
+                  "href",
+                  `https://tiktok.com/@${user.id}`
+               );
                return;
             } else if (user?.id === undefined) {
                user.id = "";

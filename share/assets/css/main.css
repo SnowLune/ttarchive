@@ -2,7 +2,7 @@
    margin: 0;
    padding: 0;
    box-sizing: border-box;
-   overflow: hidden;
+   overflow: visible;
    outline: none;
 }
 
@@ -28,6 +28,8 @@
 }
 
 .home {
+   position: fixed;
+   bottom: 0;
    flex-direction: row;
    background-color: #262626;
    height: calc(100vh - var(--title-bar-height));
@@ -39,6 +41,12 @@
    margin: 10px;
 }
 
+header {
+   position: fixed;
+   top: 0;
+   width: 100%;
+}
+
 .title-bar {
    display: flex;
    justify-content: center;
@@ -46,9 +54,6 @@
    background-color: #000;
    height: var(--title-bar-height);
    width: 100%;
-   /* position: sticky;
-   top: 0; */
-   z-index: 1000;
 }
 
 h1,
@@ -61,15 +66,15 @@ h3 {
 }
 
 h1 {
-   font-size: 1.2rem;
+   font-size: 1.15rem;
 }
 
 h2 {
-   font-size: 1rem;
+   font-size: 0.95rem;
 }
 
 h3 {
-   font-size: 0.8rem;
+   font-size: 0.75rem;
 }
 
 .username-heading {
@@ -101,17 +106,21 @@ span.material-symbols-rounded {
 
 @media screen and (min-width: 600px) {
    h1 {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
    }
 
    h2 {
-      font-size: 1.25rem;
+      font-size: 1rem;
+   }
+
+   h2 {
+      font-size: 0.8rem;
    }
 }
 
 @media screen and (min-width: 768px) {
    :root {
-      --title-bar-height: 3.5rem;
+      --title-bar-height: 3.25rem;
    }
 
    .title-bar {
@@ -119,15 +128,15 @@ span.material-symbols-rounded {
    }
 
    h1 {
-      font-size: 1.6rem;
+      font-size: 1.3rem;
    }
 
    h2 {
-      font-size: 1.5rem;
+      font-size: 1.1rem;
    }
 
    h3 {
-      font-size: 1rem;
+      font-size: 0.9rem;
    }
 
    span.material-symbols-rounded {
@@ -136,9 +145,6 @@ span.material-symbols-rounded {
 }
 
 @media screen and (min-width: 992px) {
-   span.material-symbols-rounded {
-      font-size: 2rem;
-   }
 }
 
 @media screen and (min-width: 1200px) {

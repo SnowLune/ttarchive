@@ -13,7 +13,7 @@
 </head>
 
 <body>
-   <header>
+   <main id="main">
       <div class="title-bar">
          <span class="material-symbols-rounded home-icon"><a href="../.." title="Home">home</a></span>
          <div class="username-status">
@@ -22,9 +22,12 @@
             </a>
          </div>
       </div>
-      <div class="controls">
+      <div id="controls">
          <span class="material-symbols-rounded exitfs-icon">
             <a href="" title="Exit Fullscreen">west</a>
+         </span>
+         <span class="material-symbols-rounded info-icon">
+            <a href="" title="Info">info</a>
          </span>
          <span class="material-symbols-rounded stop-icon">
             <a href="" title="Stop">stop</a>
@@ -51,8 +54,15 @@
             <a href="" title="">visibility</a>
          </span>
       </div>
-   </header>
-   <main id="main">
+      <div class="video-info">
+         <div class="info-title"></div>
+         <div class="info-upload-date"></div>
+         <div class="info-download-date"></div>
+         <div class="info-description"></div>
+         <div class="info-views"></div>
+         <div class="info-likes"></div>
+         <div class="info-comments"></div>
+      </div>
       <div class="video-main"></div>
    </main>
    <script>

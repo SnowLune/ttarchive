@@ -16,6 +16,11 @@
 
 #main {
    height: 100vh;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   flex-direction: column;
+   background-color: #000;
 }
 
 .home,
@@ -28,8 +33,6 @@
 }
 
 .home {
-   position: fixed;
-   bottom: 0;
    flex-direction: row;
    background-color: #262626;
    height: calc(100vh - var(--title-bar-height));
@@ -41,18 +44,12 @@
    margin: 10px;
 }
 
-header {
-   position: fixed;
-   top: 0;
-   width: 100%;
-}
-
 .title-bar {
+   flex: 0 0 var(--title-bar-height);
    display: flex;
    justify-content: center;
    align-items: center;
    background-color: #000;
-   height: var(--title-bar-height);
    width: 100%;
 }
 

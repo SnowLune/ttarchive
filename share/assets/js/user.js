@@ -16,11 +16,13 @@ var mainEl = document.getElementById("main");
 var userLinkEl = document.getElementById("user-url");
 var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
+var controlsEl = document.getElementById("controls");
 var toTopEl = document.querySelector(".to-top-icon a");
 var toBottomEl = document.querySelector(".to-bottom-icon a");
 var exitfsEl = document.querySelector(".exitfs-icon a");
 var stopEl = document.querySelector(".stop-icon a");
 var muteEl = document.querySelector(".mute-icon a");
+var infoEl = document.querySelector(".info-icon a");
 var faveEl = document.querySelector(".favorite-icon a");
 var hideEl = document.querySelector(".hide-icon a");
 
@@ -189,7 +191,7 @@ async function createVideos(user) {
       let loader = createLoader();
       userStatusEl.appendChild(loader);
 
-      for (let i = user.videos.length - 1; i >= 0; i--) {
+      for (let i = 0; i < user.videos.length; i++) {
          await createVideoElement(user.videos[i]);
          loader.innerText = `Loading (${Math.floor(
             (videoMainEl.childElementCount / user.videos.length) * 100
@@ -214,33 +216,41 @@ function togglePlay(video, forcePlay) {
    } else video.pause();
 }
 
+function getVideoTopDistance(video) {
+   let videoTopDistance = Math.abs(
+      video.offsetTop - videoMainEl.offsetTop - videoMainEl.scrollTop
+   );
+   return videoTopDistance;
+}
+
 // Get the index of the video closest to the top of the viewport
 function getNearestVideoIndex(opts = { direction: "down" }) {
-   var nearestVideoDistance = 10 ** 10;
-   var nearestVideo;
+   var nearestVideoIndex;
 
-   forEachVideo(
-      (video, i) => {
-         let videoTopDistance = getVideoTopDistance(video);
+   var allVideos = [];
 
-         if (videoTopDistance < nearestVideoDistance) {
-            nearestVideoDistance = videoTopDistance;
-            nearestVideo = i;
-         }
-      },
-      opts.direction === "up" ? "reverse" : "forward"
-   );
+   forEachVideo((v) => allVideos.push(v));
 
-   return nearestVideo;
+   let allVideosSorted = [...allVideos];
+
+   allVideosSorted.sort((a, b) => {
+      if (getVideoTopDistance(a) < getVideoTopDistance(b)) {
+         return -1;
+      }
+      if (getVideoTopDistance(a) > getVideoTopDistance(b)) {
+         return 1;
+      } else {
+         return 0;
+      }
+   });
+
+   nearestVideoIndex = allVideos.indexOf(allVideosSorted[0]);
+
+   return nearestVideoIndex;
 }
 
 function getNearestVideo(offset = 0) {
    return videoMainEl.children[`${getNearestVideoIndex() + offset}`];
-}
-
-function getVideoTopDistance(video) {
-   let videoTopDistance = Math.abs(video.offsetTop - videoMainEl.scrollTop);
-   return videoTopDistance;
 }
 
 function scrollVideo(videoEl, behavior) {
@@ -274,11 +284,104 @@ function mobileScroll(videos, scrollStart, scrollStop) {
    }
 }
 
+function writeInfo() {
+   const videoIndex = getNearestVideoIndex();
+   const videoData = user.videos[videoIndex];
+
+   const titleEl = document.querySelector(".video-info .info-title");
+   const uploadDateEl = document.querySelector(".video-info .info-upload-date");
+   const downloadDateEl = document.querySelector(
+      ".video-info .info-download-date"
+   );
+   const descriptionEl = document.querySelector(
+      ".video-info .info-description"
+   );
+   const viewsEl = document.querySelector(".video-info .info-views");
+   const likesEl = document.querySelector(".video-info .info-likes");
+   const commentsEl = document.querySelector(".video-info .info-comments");
+
+   // Upload Date
+   uploadDateEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">cloud_upload</span>`;
+
+   if (videoData?.timestamp === undefined) {
+      uploadDateEl.style.display = "none";
+   } else {
+      let uploadDate = new Date(videoData.timestamp * 1000);
+      uploadDateEl.innerHTML += `<span> ${uploadDate.toDateString()}</span>`;
+      uploadDateEl.style.display = "";
+   }
+
+   // Download Date
+   downloadDateEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">download_for_offline</span>`;
+
+   if (videoData?.epoch === undefined) {
+      downloadDateEl.style.display = "none";
+   } else {
+      let downloadDate = new Date(videoData.epoch * 1000);
+      downloadDateEl.innerHTML += `<span> ${downloadDate.toDateString()}</span>`;
+      downloadDateEl.style.display = "";
+   }
+
+   // Description
+   descriptionEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">description</span>`;
+
+   if (videoData?.description === undefined || videoData?.description === "") {
+      descriptionEl.style.display = "none";
+   } else {
+      descriptionEl.innerHTML += `<span> ${videoData.description}</span>`;
+      descriptionEl.style.display = "";
+   }
+
+   // Title
+   titleEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">title</span>`;
+
+   if (
+      videoData?.title === undefined ||
+      videoData.title === videoData?.description ||
+      videoData?.title === ""
+   ) {
+      titleEl.style.display = "none";
+   } else {
+      titleEl.innerHTML += `<span> ${videoData.title}</span>`;
+      titleEl.style.display = "";
+   }
+
+   // Views
+   viewsEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">play_arrow</span>`;
+
+   if (videoData?.view_count === undefined) {
+      viewsEl.style.display = "none";
+   } else {
+      viewsEl.innerHTML += `<span> ${videoData.view_count}</span>`;
+      viewsEl.style.display = "";
+   }
+
+   // Likes
+   likesEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">favorite</span>`;
+
+   if (videoData?.like_count === undefined) {
+      likesEl.style.display = "none";
+   } else {
+      likesEl.innerHTML += `<span> ${videoData.like_count}</span>`;
+      likesEl.style.display = "";
+   }
+
+   // Comments
+   commentsEl.innerHTML = `<span class="material-symbols-rounded video-info-icon">chat</span>`;
+
+   if (videoData?.comment_count === undefined) {
+      commentsEl.style.display = "none";
+   } else {
+      commentsEl.innerHTML += `<span> ${videoData.comment_count}</span>`;
+      commentsEl.style.display = "";
+   }
+}
+
 function keyHandler(event) {
    event.preventDefault();
 
-   const upKeys = ["k", "ArrowUp"];
-   const downKeys = ["j", "ArrowDown"];
+   const upKeys = ["k", "arrowup"];
+   const downKeys = ["j", "arrowdown"];
 
    let nearestVideo;
 
@@ -292,7 +395,10 @@ function keyHandler(event) {
             `${getNearestVideoIndex({ direction: "up" }) + 1}`
          ];
       scrollVideo(nearestVideo);
-   } else if (upKeys.includes(event.key.toLowerCase()) && getNearestVideoIndex() > 0) {
+   } else if (
+      upKeys.includes(event.key.toLowerCase()) &&
+      getNearestVideoIndex() > 0
+   ) {
       nearestVideo = videoMainEl.children[`${getNearestVideoIndex() - 1}`];
       scrollVideo(nearestVideo);
    } else if (event.key === " ") {
@@ -316,31 +422,30 @@ function keyHandler(event) {
    } else return;
 }
 
-function toTopHandler(event) {
+function controlsHandler(event) {
    event.preventDefault();
-   scrollVideo(videoMainEl.firstElementChild);
-}
-
-function toBottomHandler(event) {
-   event.preventDefault();
-   scrollVideo(videoMainEl.lastElementChild);
-}
-
-function exitfsHandler(event) {
-   event.preventDefault();
-   exitFullscreen();
-}
-
-function stopHandler(event) {
-   event.preventDefault();
-
-   stopAllVideos();
-}
-
-function muteHandler(event) {
-   event.preventDefault();
-
-   toggleMute();
+   switch (event.target.title) {
+      case "Exit Fullscreen":
+         exitFullscreen();
+         break;
+      case "Info":
+         console.log(user.videos[`${getNearestVideoIndex()}`]);
+         break;
+      case "Stop":
+         stopAllVideos();
+         break;
+      case "Mute":
+         toggleMute();
+         break;
+      case "Go To Top":
+         scrollVideo(videoMainEl.firstElementChild);
+         break;
+      case "Go To Bottom":
+         scrollVideo(videoMainEl.lastElementChild);
+         break;
+      default:
+         return;
+   }
 }
 
 function favoriteHandler(event) {
@@ -427,6 +532,7 @@ function scrollHandler() {
       }
 
       scrollTimeout = setTimeout(() => {
+         writeInfo();
          togglePlay(getNearestVideo(), true);
       }, 100);
    } else return;
@@ -446,11 +552,8 @@ function mouseoverHandler(event) {
    if (video.paused) togglePlay(video);
 }
 
-toTopEl.addEventListener("click", toTopHandler);
-toBottomEl.addEventListener("click", toBottomHandler);
-exitfsEl.addEventListener("click", exitfsHandler);
-stopEl.addEventListener("click", stopHandler);
-muteEl.addEventListener("click", muteHandler);
+controlsEl.addEventListener("click", controlsHandler);
+controlsEl.addEventListener("mouseover", (e) => e.preventDefault());
 faveEl.addEventListener("click", favoriteHandler);
 hideEl.addEventListener("click", hideHandler);
 
@@ -474,7 +577,8 @@ window.addEventListener("DOMContentLoaded", () => {
          }
       })
       .then((data) => (user = data))
-      .then((userData) => {
+      .then(() => {
+         user.videos.reverse();
          user.videos.forEach((videoObject) => {
             if (videoObject?.uploader_id) {
                user.id = videoObject.uploader_id;
@@ -489,7 +593,7 @@ window.addEventListener("DOMContentLoaded", () => {
          });
 
          // Create Video Elements from user.videos array
-         createVideos(userData);
+         createVideos(user);
       })
       .catch((err) => {
          throw err;

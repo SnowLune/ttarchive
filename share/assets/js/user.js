@@ -277,13 +277,13 @@ function mobileScroll(videos, scrollStart, scrollStop) {
 function keyHandler(event) {
    event.preventDefault();
 
-   const upKeys = ["k", "K", "ArrowUp"];
-   const downKeys = ["j", "J", "ArrowDown"];
+   const upKeys = ["k", "ArrowUp"];
+   const downKeys = ["j", "ArrowDown"];
 
    let nearestVideo;
 
    if (
-      downKeys.includes(event.key) &&
+      downKeys.includes(event.key.toLowerCase()) &&
       getNearestVideoIndex({ direction: "up" }) !=
          videoMainEl.childElementCount - 1
    ) {
@@ -292,7 +292,7 @@ function keyHandler(event) {
             `${getNearestVideoIndex({ direction: "up" }) + 1}`
          ];
       scrollVideo(nearestVideo);
-   } else if (upKeys.includes(event.key) && getNearestVideoIndex() > 0) {
+   } else if (upKeys.includes(event.key.toLowerCase()) && getNearestVideoIndex() > 0) {
       nearestVideo = videoMainEl.children[`${getNearestVideoIndex() - 1}`];
       scrollVideo(nearestVideo);
    } else if (event.key === " ") {
@@ -309,9 +309,9 @@ function keyHandler(event) {
       scrollVideo(nearestVideo);
    } else if (event.key === "Escape") {
       if (isFullscreen()) exitFullscreen();
-   } else if (event.key === "s" || event.key === "S") {
+   } else if (event.key.toLowerCase() === "s") {
       stopAllVideos();
-   } else if (event.key === "m" || event.key === "M") {
+   } else if (event.key.toLowerCase() === "m") {
       toggleMute();
    } else return;
 }

@@ -17,14 +17,8 @@ var userLinkEl = document.getElementById("user-url");
 var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
 var controlsEl = document.getElementById("controls");
-var toTopEl = document.querySelector(".to-top-icon a");
-var toBottomEl = document.querySelector(".to-bottom-icon a");
-var exitfsEl = document.querySelector(".exitfs-icon a");
-var stopEl = document.querySelector(".stop-icon a");
-var muteEl = document.querySelector(".mute-icon a");
-var infoEl = document.querySelector(".info-icon a");
-var faveEl = document.querySelector(".favorite-icon a");
-var hideEl = document.querySelector(".hide-icon a");
+var muteButtonEl = document.querySelector(".mute-icon a");
+var infoEl = document.querySelector(".video-info");
 
 // Local Storage getters and setters
 function getFavorites() {
@@ -72,20 +66,20 @@ function stopAllVideos() {
 
 function toggleMute() {
    forEachVideo((video) => {
-      if (muteEl.textContent === "volume_up") {
+      if (muteButtonEl.textContent === "volume_up") {
          video.muted = true;
          video.defaultMuted = true;
-      } else if (muteEl.textContent === "volume_off") {
+      } else if (muteButtonEl.textContent === "volume_off") {
          video.muted = false;
          video.defaultMuted = false;
       }
    });
 
-   if (muteEl.textContent === "volume_up") {
-      muteEl.textContent = "volume_off";
+   if (muteButtonEl.textContent === "volume_up") {
+      muteButtonEl.textContent = "volume_off";
       setMuted(true);
    } else {
-      muteEl.textContent = "volume_up";
+      muteButtonEl.textContent = "volume_up";
       setMuted(false);
    }
 }
@@ -377,6 +371,22 @@ function writeInfo() {
    }
 }
 
+function showInfo() {
+   infoEl.style.display = "";
+}
+
+function hideInfo() {
+   infoEl.style.display = "none";
+}
+
+function toggleInfo() {
+   if ((infoEl.style.display === "none")) {
+      showInfo();
+   } else {
+      hideInfo();
+   }
+}
+
 function keyHandler(event) {
    event.preventDefault();
 
@@ -422,7 +432,7 @@ function controlsHandler(event) {
          exitFullscreen();
          break;
       case "Info":
-         console.log(user.videos[`${getNearestVideoIndex()}`]);
+         toggleInfo();
          break;
       case "Stop":
          stopAllVideos();
@@ -547,8 +557,6 @@ function mouseoverHandler(event) {
 
 controlsEl.addEventListener("click", controlsHandler);
 controlsEl.addEventListener("mouseover", (e) => e.preventDefault());
-faveEl.addEventListener("click", favoriteHandler);
-hideEl.addEventListener("click", hideHandler);
 
 videoMainEl.addEventListener("click", clickHandler);
 videoMainEl.addEventListener("scroll", scrollHandler);
@@ -596,9 +604,9 @@ window.addEventListener("DOMContentLoaded", () => {
    s_Hidden = getHidden();
    s_Muted = getMuted();
    if (s_Muted) {
-      muteEl.textContent = "volume_off";
+      muteButtonEl.textContent = "volume_off";
    } else {
-      muteEl.textContent = "volume_up";
+      muteButtonEl.textContent = "volume_up";
    }
 });
 

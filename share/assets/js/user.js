@@ -224,7 +224,7 @@ function getVideoTopDistance(video) {
 }
 
 // Get the index of the video closest to the top of the viewport
-function getNearestVideoIndex(opts = { direction: "down" }) {
+function getNearestVideoIndex() {
    var nearestVideoIndex;
 
    var allVideos = [];
@@ -383,36 +383,29 @@ function keyHandler(event) {
    const upKeys = ["k", "arrowup"];
    const downKeys = ["j", "arrowdown"];
 
-   let nearestVideo;
+   let nearestVideoIndex = getNearestVideoIndex();
 
    if (
       downKeys.includes(event.key.toLowerCase()) &&
-      getNearestVideoIndex({ direction: "up" }) !=
-         videoMainEl.childElementCount - 1
+      nearestVideoIndex !== videoMainEl.childElementCount - 1
    ) {
-      nearestVideo =
-         videoMainEl.children[
-            `${getNearestVideoIndex({ direction: "up" }) + 1}`
-         ];
-      scrollVideo(nearestVideo);
+      scrollVideo(getNearestVideo(1));
    } else if (
       upKeys.includes(event.key.toLowerCase()) &&
-      getNearestVideoIndex() > 0
+      nearestVideoIndex > 0
    ) {
-      nearestVideo = videoMainEl.children[`${getNearestVideoIndex() - 1}`];
-      scrollVideo(nearestVideo);
+      scrollVideo(getNearestVideo(-1));
    } else if (event.key === " ") {
-      nearestVideo = videoMainEl.children[`${getNearestVideoIndex()}`];
+      let nearestVideo = getNearestVideo();
+
       if (isFullscreen()) {
          togglePlay(nearestVideo);
          return;
       }
    } else if (event.key === "Home") {
-      nearestVideo = videoMainEl.firstElementChild;
-      scrollVideo(nearestVideo);
+      scrollVideo(videoMainEl.firstElementChild);
    } else if (event.key === "End") {
-      nearestVideo = videoMainEl.lastElementChild;
-      scrollVideo(nearestVideo);
+      scrollVideo(videoMainEl.lastElementChild);
    } else if (event.key === "Escape") {
       if (isFullscreen()) exitFullscreen();
    } else if (event.key.toLowerCase() === "s") {

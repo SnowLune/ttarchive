@@ -17,8 +17,11 @@ var userLinkEl = document.getElementById("user-url");
 var userStatusEl = document.querySelector(".username-status");
 var videoMainEl = document.querySelector(".video-main");
 var controlsEl = document.getElementById("controls");
-var muteButtonEl = document.querySelector(".mute-icon a");
 var infoEl = document.querySelector(".video-info");
+
+// Buttons
+var muteButtonEl = document.querySelector(".mute-icon a");
+var infoButtonEl = document.querySelector(".info-icon");
 
 // Local Storage getters and setters
 function getFavorites() {
@@ -90,15 +93,19 @@ function isFullscreen() {
 }
 
 function enterFullscreen() {
-   if (videoMainEl.classList.contains("mobile-full") === false)
+   if (videoMainEl.classList.contains("mobile-full") === false) {
       videoMainEl.classList.add("mobile-full");
-   else return;
+      if (isFullscreen())
+         infoButtonEl.classList.remove("hidden");
+   } else return;
 }
 
 function exitFullscreen() {
-   if (videoMainEl.classList.contains("mobile-full") === true)
+   if (videoMainEl.classList.contains("mobile-full") === true) {
       videoMainEl.classList.remove("mobile-full");
-   else return;
+      if (isFullscreen() === false)
+         infoButtonEl.classList.add("hidden");
+   } else return;
 }
 
 function toggleFullscreen() {
@@ -185,6 +192,8 @@ async function createVideos(user) {
       let loader = createLoader();
       userStatusEl.appendChild(loader);
 
+      videoMainEl.classList.add("loading");
+
       for (let i = 0; i < user.videos.length; i++) {
          await createVideoElement(user.videos[i]);
          loader.innerText = `Loading (${Math.floor(
@@ -193,6 +202,7 @@ async function createVideos(user) {
       }
 
       loader.remove();
+      videoMainEl.classList.remove("loading");
    } catch {
       console.error("Failed to load video.");
    }
@@ -372,15 +382,18 @@ function writeInfo() {
 }
 
 function showInfo() {
-   infoEl.style.display = "";
+   infoEl.classList.remove("hidden");
+   infoButtonEl.classList.remove("icon-nofill");
+   writeInfo();
 }
 
 function hideInfo() {
-   infoEl.style.display = "none";
+   infoEl.classList.add("hidden");
+   infoButtonEl.classList.add("icon-nofill");
 }
 
 function toggleInfo() {
-   if ((infoEl.style.display === "none")) {
+   if (infoEl.classList.contains("hidden")) {
       showInfo();
    } else {
       hideInfo();

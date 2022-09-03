@@ -10,8 +10,13 @@
    --title-bar-height: 3rem;
    --main-font: "Inter"
 }
+
 .material-symbols-rounded {
    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 48;
+}
+
+.material-symbols-rounded.icon-nofill {
+   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 48;
 }
 
 #main {
@@ -141,8 +146,6 @@ span.material-symbols-rounded {
    }
 }
 
-@media screen and (min-width: 992px) {
-}
+@media screen and (min-width: 992px) {}
 
-@media screen and (min-width: 1200px) {
-}
+@media screen and (min-width: 1200px) {}

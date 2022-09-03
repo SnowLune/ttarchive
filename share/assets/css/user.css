@@ -1,18 +1,17 @@
-:root {
-   --video-info-height: 7rem;
-}
-
 .video-main {
    flex: 1;
    width: 100%;
    display: flex;
-   flex-direction: row;
+   flex-flow: row wrap;
    justify-content: center;
    align-items: center;
-   flex-wrap: wrap;
    background-color: #000;
    overflow-y: scroll;
-   scroll-snap-type: y mandatory;
+   scroll-snap-type: y proximity;
+}
+
+.video-main.loading {
+   scroll-snap-type: none;
 }
 
 .video-post {
@@ -21,13 +20,21 @@
    margin: 0px;
    background-color: #000;
    scroll-snap-align: start;
-   scroll-snap-stop: always;
+   scroll-snap-stop: normal;
+}
+
+.video-main.mobile-full {
+   flex-flow: column nowrap;
+   justify-content: start;
+   margin: 0;
+   scroll-snap-type: y mandatory;
 }
 
 .mobile-full>.video-post {
    margin: 0;
    height: 100%;
-   width: 100%;
+   width: fit-content;
+   scroll-snap-stop: always;
 }
 
 .home-icon {
@@ -70,10 +77,6 @@ span.material-symbols-rounded a {
    color: red;
 }
 
-.hidden {
-   display: none;
-}
-
 /* Remove these while I work on implementing them properly */
 .favorite-icon,
 .hide-icon,
@@ -82,13 +85,8 @@ span.material-symbols-rounded a {
    display: none;
 }
 
-/* 
-.stop-icon {
-   display: none;
-} */
-
 .video-info {
-   flex: 0 0 var(--video-info-height);
+   flex: 0 0 10rem;
    background-color: #000;
    font-family: var(--main-font);
    font-size: 0.75rem;
@@ -97,19 +95,18 @@ span.material-symbols-rounded a {
    justify-content: center;
    align-items: flex-start;
    flex-direction: column;
-   height: fit-content;
+   margin: 12px;
 }
 
-.video-info > div {
+.video-info>div {
    flex: 1;
    display: flex;
    justify-content: center;
    align-items: center;
    flex-direction: row;
-   margin: 2px;
 }
 
-.video-info > div > span {
+.video-info>div>span {
    margin: 0 4px;
 }
 
@@ -127,7 +124,6 @@ span.material-symbols-rounded.video-info-icon {
    .video-post {
       height: 50%;
       margin: 5px;
-      scroll-snap-align: center;
    }
 }
 

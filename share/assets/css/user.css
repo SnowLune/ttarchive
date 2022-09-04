@@ -1,15 +1,17 @@
 .video-main {
-   position: fixed;
-   bottom: 0;
+   flex: 1;
+   width: 100%;
    display: flex;
-   flex-direction: row;
+   flex-flow: row wrap;
    justify-content: center;
    align-items: center;
-   flex-wrap: wrap;
    background-color: #000;
-   height: calc(100vh - var(--title-bar-height) * 2);
    overflow-y: scroll;
-   scroll-snap-type: y mandatory;
+   scroll-snap-type: y proximity;
+}
+
+.video-main.loading {
+   scroll-snap-type: none;
 }
 
 .video-post {
@@ -18,13 +20,21 @@
    margin: 0px;
    background-color: #000;
    scroll-snap-align: start;
-   scroll-snap-stop: always;
+   scroll-snap-stop: normal;
 }
 
-.mobile-full > .video-post {
+.video-main.mobile-full {
+   flex-flow: column nowrap;
+   justify-content: start;
+   margin: 0;
+   scroll-snap-type: y mandatory;
+}
+
+.mobile-full>.video-post {
    margin: 0;
    height: 100%;
-   width: 100vw;
+   width: fit-content;
+   scroll-snap-stop: always;
 }
 
 .home-icon {
@@ -32,21 +42,26 @@
    left: 5vw;
 }
 
+.toggleControls-icon {
+   position: absolute;
+   right: 5vw;
+}
+
 span.material-symbols-rounded a {
    color: #aaa;
    background-color: #000;
 }
 
-.controls {
+#controls {
+   flex: 0 0 var(--title-bar-height);
    display: flex;
    justify-content: center;
    align-items: center;
    width: 100%;
-   height: var(--title-bar-height);
    background-color: #000;
 }
 
-.controls .material-symbols-rounded {
+#controls .material-symbols-rounded {
    margin: 0 5px;
 }
 
@@ -67,10 +82,6 @@ span.material-symbols-rounded a {
    color: red;
 }
 
-.hidden {
-   display: none;
-}
-
 /* Remove these while I work on implementing them properly */
 .favorite-icon,
 .hide-icon,
@@ -79,10 +90,45 @@ span.material-symbols-rounded a {
    display: none;
 }
 
-/* 
-.stop-icon {
-   display: none;
-} */
+.video-info {
+   position: absolute;
+   bottom: 0;
+   flex: 0 0 10rem;
+   background: none;
+   font-family: var(--main-font);
+   font-size: 0.75rem;
+   color: #fff;
+   text-shadow: 1px 1px 2px #555;
+   display: flex;
+   justify-content: center;
+   align-items: flex-start;
+   flex-direction: column;
+   margin: 12px;
+   opacity: 0.9;
+   width: 90%;
+}
+
+.video-info .material-symbols-rounded {
+   color: #fff;
+   background: none;
+   opacity: 0.9;
+}
+
+.video-info>div {
+   flex: 1;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   flex-direction: row;
+}
+
+.video-info>div>span {
+   margin: 0 4px;
+}
+
+span.material-symbols-rounded.video-info-icon {
+   font-size: 1rem;
+}
 
 @media screen and (min-width: 600px) {}
 
@@ -93,15 +139,10 @@ span.material-symbols-rounded a {
 
    .video-post {
       height: 50%;
-      margin: 5px;
-      scroll-snap-align: center;
+      margin: 4px;
    }
 }
 
-@media screen and (min-width: 992px) {
-   .video-post {
-      height: 100%;
-   }
-}
+@media screen and (min-width: 992px) {}
 
 @media screen and (min-width: 1200px) {}

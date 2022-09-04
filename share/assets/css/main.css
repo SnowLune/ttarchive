@@ -10,12 +10,22 @@
    --title-bar-height: 3rem;
    --main-font: "Inter"
 }
+
 .material-symbols-rounded {
    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 48;
 }
 
+.material-symbols-rounded.icon-nofill {
+   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 48;
+}
+
 #main {
    height: 100vh;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   flex-direction: column;
+   background-color: #000;
 }
 
 .home,
@@ -28,8 +38,6 @@
 }
 
 .home {
-   position: fixed;
-   bottom: 0;
    flex-direction: row;
    background-color: #262626;
    height: calc(100vh - var(--title-bar-height));
@@ -41,18 +49,12 @@
    margin: 10px;
 }
 
-header {
-   position: fixed;
-   top: 0;
-   width: 100%;
-}
-
 .title-bar {
+   flex: 0 0 var(--title-bar-height);
    display: flex;
    justify-content: center;
    align-items: center;
    background-color: #000;
-   height: var(--title-bar-height);
    width: 100%;
 }
 
@@ -144,8 +146,6 @@ span.material-symbols-rounded {
    }
 }
 
-@media screen and (min-width: 992px) {
-}
+@media screen and (min-width: 992px) {}
 
-@media screen and (min-width: 1200px) {
-}
+@media screen and (min-width: 1200px) {}

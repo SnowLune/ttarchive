@@ -9,11 +9,12 @@
    <link rel="stylesheet" href="../../assets/css/font.css" />
    <link rel="stylesheet" href="../../assets/css/main.css" />
    <link rel="stylesheet" href="../../assets/css/user.css" />
+   <link rel="stylesheet" href="../../assets/css/utility.css" />
    <script defer src="../../assets/js/user.js"></script>
 </head>
 
 <body>
-   <header>
+   <main id="main">
       <div class="title-bar">
          <span class="material-symbols-rounded home-icon"><a href="../.." title="Home">home</a></span>
          <div class="username-status">
@@ -21,12 +22,16 @@
                <h1 class="username-heading"></h1>
             </a>
          </div>
+         <span class="material-symbols-rounded toggleControls-icon">tune<a href="" title="Hide Controls">expand_less</a></span>
       </div>
-      <div class="controls">
-         <span class="material-symbols-rounded exitfs-icon">
+      <div id="controls" class="">
+         <span class="material-symbols-rounded exitfs-icon hidden">
             <a href="" title="Exit Fullscreen">west</a>
          </span>
-         <span class="material-symbols-rounded stop-icon">
+         <span class="material-symbols-rounded info-icon hidden icon-nofill">
+            <a href="" title="Info">info</a>
+         </span>
+         <span class="material-symbols-rounded stop-icon hidden">
             <a href="" title="Stop">stop</a>
          </span>
          <span class="material-symbols-rounded mute-icon">
@@ -51,8 +56,15 @@
             <a href="" title="">visibility</a>
          </span>
       </div>
-   </header>
-   <main id="main">
+      <div class="video-info hidden">
+         <div class="info-title"></div>
+         <div class="info-upload-date"></div>
+         <div class="info-download-date"></div>
+         <div class="info-description"></div>
+         <div class="info-views"></div>
+         <div class="info-likes"></div>
+         <div class="info-comments"></div>
+      </div>
       <div class="video-main"></div>
    </main>
    <script>

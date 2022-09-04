@@ -21,6 +21,8 @@ var infoEl = document.querySelector(".video-info");
 
 // Buttons
 var muteButtonEl = document.querySelector(".mute-icon a");
+var stopButtonEl = document.querySelector(".stop-icon");
+var exitfsButtonEl = document.querySelector(".exitfs-icon");
 var infoButtonEl = document.querySelector(".info-icon");
 
 // Local Storage getters and setters
@@ -45,6 +47,17 @@ function setMuted(m) {
    else return false;
 }
 
+function getShowInfo() {
+   let showInfo = JSON.parse(window.localStorage.getItem("showInfo"));
+   return showInfo;
+}
+
+function setShowInfo(showInfo) {
+   window.localStorage.setItem("showInfo", JSON.stringify(showInfo));
+   if (getShowInfo() !== null) return true;
+   else return false;
+}
+
 // Loop through each video element in videoMainEl
 function forEachVideo(f, direction = "forward") {
    if (direction === "reverse") {
@@ -65,6 +78,7 @@ function stopAllVideos() {
          video.currentTime = 0;
       }
    });
+   stopButtonEl.classList.add("hidden");
 }
 
 function toggleMute() {
@@ -95,16 +109,23 @@ function isFullscreen() {
 function enterFullscreen() {
    if (videoMainEl.classList.contains("mobile-full") === false) {
       videoMainEl.classList.add("mobile-full");
-      if (isFullscreen())
+      if (isFullscreen()) {
+         if (getShowInfo()) showInfo();
          infoButtonEl.classList.remove("hidden");
+         exitfsButtonEl.classList.remove("hidden");
+      }
    } else return;
 }
 
 function exitFullscreen() {
    if (videoMainEl.classList.contains("mobile-full") === true) {
       videoMainEl.classList.remove("mobile-full");
-      if (isFullscreen() === false)
+      if (isFullscreen() === false) {
+         stopAllVideos();
+         hideInfo();
          infoButtonEl.classList.add("hidden");
+         exitfsButtonEl.classList.add("hidden");
+      }
    } else return;
 }
 
@@ -208,16 +229,20 @@ async function createVideos(user) {
    }
 }
 
-function togglePlay(video, forcePlay) {
+function togglePlay(video, forcePlay = false) {
    if (video.paused || forcePlay === true) {
-      // Pause playing videos if mobile
+      // Pause playing videos if fullscreen
       if (isFullscreen()) {
          forEachVideo((v) => {
             if (v.paused === false) v.pause();
          });
       }
       video.play();
-   } else video.pause();
+      if (isFullscreen === true) stopButtonEl.classList.remove("hidden");
+   } else {
+      video.pause();
+      if (isFullscreen === true) stopButtonEl.classList.add("hidden");
+   }
 }
 
 function getVideoTopDistance(video) {
@@ -395,8 +420,10 @@ function hideInfo() {
 function toggleInfo() {
    if (infoEl.classList.contains("hidden")) {
       showInfo();
+      setShowInfo(true);
    } else {
       hideInfo();
+      setShowInfo(false);
    }
 }
 
@@ -530,14 +557,13 @@ function clickHandler(event) {
    // Play/Pause
    if (event.target.tagName !== "VIDEO") return;
 
-   if (event.target.paused) {
-      if (!isFullscreen()) {
-         enterFullscreen();
-         scrollVideo(event.target, "auto");
-         // Play is implicit with the scroll so we return
-         return;
-      }
+   if (!isFullscreen()) {
+      enterFullscreen();
+      scrollVideo(event.target, "auto");
+      // Play is implicit with the scroll so we return
+      return;
    }
+
    togglePlay(event.target);
 }
 
@@ -564,13 +590,24 @@ function touchHandler(event) {
 }
 
 function mouseoverHandler(event) {
+   if (isFullscreen()) return;
+   if (event.target.tagName !== "VIDEO") return;
    let video = event.target;
-   if (video.paused) togglePlay(video);
+   if (video.paused) togglePlay(video, true);
+}
+
+function mouseoutHandler(event) {
+   if (isFullscreen()) return;
+   if (event.target.tagName !== "VIDEO") return;
+   let video = event.target;
+   video.pause();
+   video.currentTime = 0;
 }
 
 controlsEl.addEventListener("click", controlsHandler);
-controlsEl.addEventListener("mouseover", (e) => e.preventDefault());
 
+videoMainEl.addEventListener("mouseout", mouseoutHandler);
+videoMainEl.addEventListener("mouseover", mouseoverHandler);
 videoMainEl.addEventListener("click", clickHandler);
 videoMainEl.addEventListener("scroll", scrollHandler);
 // videoMainEl.addEventListener("touchstart", touchHandler);
@@ -616,6 +653,7 @@ window.addEventListener("DOMContentLoaded", () => {
    s_Favorites = getFavorites();
    s_Hidden = getHidden();
    s_Muted = getMuted();
+
    if (s_Muted) {
       muteButtonEl.textContent = "volume_off";
    } else {

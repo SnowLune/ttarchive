@@ -86,16 +86,27 @@ span.material-symbols-rounded a {
 }
 
 .video-info {
+   position: absolute;
+   bottom: 0;
    flex: 0 0 10rem;
-   background-color: #000;
+   background: none;
    font-family: var(--main-font);
    font-size: 0.75rem;
-   color: #aaa;
+   color: #fff;
+   text-shadow: 1px 1px 2px #555;
    display: flex;
    justify-content: center;
    align-items: flex-start;
    flex-direction: column;
    margin: 12px;
+   opacity: 0.9;
+   width: 90%;
+}
+
+.video-info .material-symbols-rounded {
+   color: #fff;
+   background: none;
+   opacity: 0.9;
 }
 
 .video-info>div {
@@ -123,14 +134,10 @@ span.material-symbols-rounded.video-info-icon {
 
    .video-post {
       height: 50%;
-      margin: 5px;
+      margin: 4px;
    }
 }
 
-@media screen and (min-width: 992px) {
-   .video-post {
-      height: 100%;
-   }
-}
+@media screen and (min-width: 992px) {}
 
 @media screen and (min-width: 1200px) {}

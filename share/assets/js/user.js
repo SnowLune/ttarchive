@@ -10,6 +10,7 @@ var scrollTimeout;
 var s_Favorites;
 var s_Hidden;
 var s_Muted;
+var s_ShowControls;
 
 // Global Elements
 var mainEl = document.getElementById("main");
@@ -21,6 +22,7 @@ var infoEl = document.querySelector(".video-info");
 
 // Buttons
 var muteButtonEl = document.querySelector(".mute-icon a");
+var toggleControlsButtonEl = document.querySelector(".toggleControls-icon a");
 var stopButtonEl = document.querySelector(".stop-icon");
 var exitfsButtonEl = document.querySelector(".exitfs-icon");
 var infoButtonEl = document.querySelector(".info-icon");
@@ -55,6 +57,17 @@ function getShowInfo() {
 function setShowInfo(showInfo) {
    window.localStorage.setItem("showInfo", JSON.stringify(showInfo));
    if (getShowInfo() !== null) return true;
+   else return false;
+}
+
+function getShowControls() {
+   let showControls = JSON.parse(window.localStorage.getItem("showControls"));
+   return showControls;
+}
+
+function setShowControls(showControls) {
+   window.localStorage.setItem("showControls", JSON.stringify(showControls));
+   if (getShowControls() !== null) return true;
    else return false;
 }
 
@@ -427,6 +440,21 @@ function toggleInfo() {
    }
 }
 
+function toggleControls(forceBool) {
+   if (toggleControlsButtonEl.title === "Show Controls" || forceBool === true) {
+      controlsEl.classList.remove("hidden");
+      toggleControlsButtonEl.title = "Hide Controls";
+      toggleControlsButtonEl.textContent = "expand_less";
+   } else if (
+      toggleControlsButtonEl.title === "Hide Controls" ||
+      forceBool === false
+   ) {
+      controlsEl.classList.add("hidden");
+      toggleControlsButtonEl.title = "Show Controls";
+      toggleControlsButtonEl.textContent = "expand_more";
+   }
+}
+
 function keyHandler(event) {
    event.preventDefault();
 
@@ -604,6 +632,21 @@ function mouseoutHandler(event) {
    video.currentTime = 0;
 }
 
+function toggleControlsHandler(event) {
+   event.preventDefault();
+
+   toggleControls();
+
+   let showControls = !controlsEl.classList.contains("hidden");
+
+   if (showControls === true) {
+      setShowControls(true);
+   } else if (showControls === false) {
+      setShowControls(false);
+   }
+}
+
+toggleControlsButtonEl.addEventListener("click", toggleControlsHandler);
 controlsEl.addEventListener("click", controlsHandler);
 
 videoMainEl.addEventListener("mouseout", mouseoutHandler);
@@ -653,6 +696,13 @@ window.addEventListener("DOMContentLoaded", () => {
    s_Favorites = getFavorites();
    s_Hidden = getHidden();
    s_Muted = getMuted();
+   s_ShowControls = getShowControls();
+
+   if (s_ShowControls === null || s_ShowControls === true) {
+      toggleControls(true);
+   } else if (s_ShowControls === false) {
+      toggleControls(false);
+   }
 
    if (s_Muted) {
       muteButtonEl.textContent = "volume_off";

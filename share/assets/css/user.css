@@ -42,6 +42,11 @@
    left: 5vw;
 }
 
+.toggleControls-icon {
+   position: absolute;
+   right: 5vw;
+}
+
 span.material-symbols-rounded a {
    color: #aaa;
    background-color: #000;

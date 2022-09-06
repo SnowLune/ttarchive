@@ -22,6 +22,7 @@ var infoEl = document.querySelector(".video-info");
 
 // Buttons
 var muteButtonEl = document.querySelector(".mute-icon a");
+var dateSortButtonEl = document.querySelector(".dateSort-icon");
 var toggleControlsButtonEl = document.querySelector(".toggleControls-icon a");
 var stopButtonEl = document.querySelector(".stop-icon");
 var exitfsButtonEl = document.querySelector(".exitfs-icon");
@@ -72,8 +73,8 @@ function setShowControls(showControls) {
 }
 
 // Loop through each video element in videoMainEl
-function forEachVideo(f, direction = "forward") {
-   if (direction === "reverse") {
+function forEachVideo(f, options = { direction: "forward" }) {
+   if (options.direction === "reverse") {
       for (let index = videoMainEl.childElementCount - 1; index >= 0; index--) {
          f(videoMainEl.children[index], index);
       }
@@ -221,7 +222,7 @@ function createVideoElement(videoObject) {
    });
 }
 
-async function createVideos(user) {
+async function createVideos(user, f) {
    try {
       let loader = createLoader();
       userStatusEl.appendChild(loader);
@@ -237,6 +238,9 @@ async function createVideos(user) {
 
       loader.remove();
       videoMainEl.classList.remove("loading");
+
+      // function parameter to be executed after loading videos is completed
+      f();
    } catch {
       console.error("Failed to load video.");
    }
@@ -266,16 +270,14 @@ function getVideoTopDistance(video) {
 }
 
 // Get the index of the video closest to the top of the viewport
-function getNearestVideoIndex() {
+function getNearestVideoIndex(options = { direction: "forward" }) {
    var nearestVideoIndex;
 
-   var allVideos = [];
+   var allVideos = [...videoMainEl.children];
 
-   forEachVideo((v) => allVideos.push(v));
+   if (options.direction === "reverse") allVideos.reverse();
 
-   let allVideosSorted = [...allVideos];
-
-   allVideosSorted.sort((a, b) => {
+   allVideos.sort((a, b) => {
       if (getVideoTopDistance(a) < getVideoTopDistance(b)) {
          return -1;
       }
@@ -286,17 +288,22 @@ function getNearestVideoIndex() {
       }
    });
 
-   nearestVideoIndex = allVideos.indexOf(allVideosSorted[0]);
+   nearestVideoIndex = [...videoMainEl.children].indexOf(allVideos[0]);
 
    return nearestVideoIndex;
 }
 
-function getNearestVideo(offset = 0) {
-   return videoMainEl.children[`${getNearestVideoIndex() + offset}`];
+function getNearestVideo(offset = 0, options = { direction: "forward" }) {
+   return videoMainEl.children[
+      `${getNearestVideoIndex({ direction: options.direction }) + offset}`
+   ];
 }
 
-function scrollVideo(videoEl, behavior) {
-   videoEl.scrollIntoView({ behavior: behavior || "smooth", block: "center" });
+function scrollVideo(videoEl, behavior, block) {
+   videoEl.scrollIntoView({
+      behavior: behavior || "smooth",
+      block: block || "start"
+   });
 }
 
 function isMobile() {
@@ -327,8 +334,8 @@ function mobileScroll(videos, scrollStart, scrollStop) {
 }
 
 function writeInfo() {
-   const videoIndex = getNearestVideoIndex();
-   const videoData = user.videos[videoIndex];
+   const videoID = getNearestVideo().getAttribute("data-id");
+   const videoData = user.videos.filter((v) => v.id === videoID)[0];
 
    const titleEl = document.querySelector(".video-info .info-title");
    const uploadDateEl = document.querySelector(".video-info .info-upload-date");
@@ -379,8 +386,9 @@ function writeInfo() {
 
    if (
       videoData?.title === undefined ||
-      videoData.title === videoData?.description ||
-      videoData?.title === ""
+      videoData?.title === videoData?.description ||
+      videoData?.title === "" ||
+      videoData?.title.trim().startsWith("TikTok video #")
    ) {
       titleEl.style.display = "none";
    } else {
@@ -444,15 +452,24 @@ function toggleControls(forceBool) {
    if (toggleControlsButtonEl.title === "Show Controls" || forceBool === true) {
       controlsEl.classList.remove("hidden");
       toggleControlsButtonEl.title = "Hide Controls";
-      toggleControlsButtonEl.textContent = "expand_less";
+      toggleControlsButtonEl.textContent = "tune expand_less";
    } else if (
       toggleControlsButtonEl.title === "Hide Controls" ||
       forceBool === false
    ) {
       controlsEl.classList.add("hidden");
       toggleControlsButtonEl.title = "Show Controls";
-      toggleControlsButtonEl.textContent = "expand_more";
+      toggleControlsButtonEl.textContent = "tune expand_more";
    }
+}
+
+function dateSort() {
+   var videos = [...videoMainEl.children];
+   var scroll = videoMainEl.scrollTop;
+   videos.reverse();
+   videoMainEl.innerHTML = "";
+   videoMainEl.append(...videos);
+   videoMainEl.scroll({ top: scroll, behavior: "auto" });
 }
 
 function keyHandler(event) {
@@ -467,7 +484,12 @@ function keyHandler(event) {
       downKeys.includes(event.key.toLowerCase()) &&
       nearestVideoIndex !== videoMainEl.childElementCount - 1
    ) {
-      scrollVideo(getNearestVideo(1));
+      let video;
+
+      if (isFullscreen()) video = getNearestVideo(1);
+      else video = getNearestVideo(1, { direction: "reverse" });
+
+      scrollVideo(video);
    } else if (
       upKeys.includes(event.key.toLowerCase()) &&
       nearestVideoIndex > 0
@@ -513,6 +535,9 @@ function controlsHandler(event) {
          break;
       case "Go To Bottom":
          scrollVideo(videoMainEl.lastElementChild);
+         break;
+      case "Sort By Date":
+         dateSort();
          break;
       default:
          return;
@@ -621,6 +646,7 @@ function mouseoverHandler(event) {
    if (isFullscreen()) return;
    if (event.target.tagName !== "VIDEO") return;
    let video = event.target;
+   video.muted = true;
    if (video.paused) togglePlay(video, true);
 }
 
@@ -630,6 +656,7 @@ function mouseoutHandler(event) {
    let video = event.target;
    video.pause();
    video.currentTime = 0;
+   video.muted = video.defaultMuted;
 }
 
 function toggleControlsHandler(event) {
@@ -687,7 +714,9 @@ window.addEventListener("DOMContentLoaded", () => {
          });
 
          // Create Video Elements from user.videos array
-         createVideos(user);
+         createVideos(user, () => {
+            dateSortButtonEl.classList.remove("hidden");
+         });
       })
       .catch((err) => {
          throw err;

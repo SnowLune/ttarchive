@@ -16,7 +16,7 @@
 
 .video-post {
    height: 25%;
-   width: min-content;
+   width: auto;
    margin: 0px;
    background-color: #000;
    scroll-snap-align: start;
@@ -32,8 +32,8 @@
 
 .mobile-full>.video-post {
    margin: 0;
-   height: 100%;
-   width: fit-content;
+   flex: 0 0 100%;
+   width: auto;
    scroll-snap-stop: always;
 }
 

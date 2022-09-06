@@ -72,8 +72,8 @@ function setShowControls(showControls) {
 }
 
 // Loop through each video element in videoMainEl
-function forEachVideo(f, direction = "forward") {
-   if (direction === "reverse") {
+function forEachVideo(f, options = { direction: "forward" }) {
+   if (options.direction === "reverse") {
       for (let index = videoMainEl.childElementCount - 1; index >= 0; index--) {
          f(videoMainEl.children[index], index);
       }
@@ -266,16 +266,14 @@ function getVideoTopDistance(video) {
 }
 
 // Get the index of the video closest to the top of the viewport
-function getNearestVideoIndex() {
+function getNearestVideoIndex(options = { direction: "forward" }) {
    var nearestVideoIndex;
 
-   var allVideos = [];
+   var allVideos = [...videoMainEl.children];
 
-   forEachVideo((v) => allVideos.push(v));
+   if (options.direction === "reverse") allVideos.reverse();
 
-   let allVideosSorted = [...allVideos];
-
-   allVideosSorted.sort((a, b) => {
+   allVideos.sort((a, b) => {
       if (getVideoTopDistance(a) < getVideoTopDistance(b)) {
          return -1;
       }
@@ -286,17 +284,22 @@ function getNearestVideoIndex() {
       }
    });
 
-   nearestVideoIndex = allVideos.indexOf(allVideosSorted[0]);
+   nearestVideoIndex = [...videoMainEl.children].indexOf(allVideos[0]);
 
    return nearestVideoIndex;
 }
 
-function getNearestVideo(offset = 0) {
-   return videoMainEl.children[`${getNearestVideoIndex() + offset}`];
+function getNearestVideo(offset = 0, options = { direction: "forward" }) {
+   return videoMainEl.children[
+      `${getNearestVideoIndex({ direction: options.direction }) + offset}`
+   ];
 }
 
-function scrollVideo(videoEl, behavior) {
-   videoEl.scrollIntoView({ behavior: behavior || "smooth", block: "center" });
+function scrollVideo(videoEl, behavior, block) {
+   videoEl.scrollIntoView({
+      behavior: behavior || "smooth",
+      block: block || "start"
+   });
 }
 
 function isMobile() {
@@ -467,7 +470,12 @@ function keyHandler(event) {
       downKeys.includes(event.key.toLowerCase()) &&
       nearestVideoIndex !== videoMainEl.childElementCount - 1
    ) {
-      scrollVideo(getNearestVideo(1));
+      let video;
+
+      if (isFullscreen()) video = getNearestVideo(1);
+      else video = getNearestVideo(1, { direction: "reverse" });
+
+      scrollVideo(video);
    } else if (
       upKeys.includes(event.key.toLowerCase()) &&
       nearestVideoIndex > 0
@@ -621,6 +629,7 @@ function mouseoverHandler(event) {
    if (isFullscreen()) return;
    if (event.target.tagName !== "VIDEO") return;
    let video = event.target;
+   video.muted = true;
    if (video.paused) togglePlay(video, true);
 }
 
@@ -630,6 +639,7 @@ function mouseoutHandler(event) {
    let video = event.target;
    video.pause();
    video.currentTime = 0;
+   video.muted = video.defaultMuted;
 }
 
 function toggleControlsHandler(event) {

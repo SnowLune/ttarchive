@@ -22,6 +22,7 @@ var infoEl = document.querySelector(".video-info");
 
 // Buttons
 var muteButtonEl = document.querySelector(".mute-icon a");
+var dateSortButtonEl = document.querySelector(".dateSort-icon");
 var toggleControlsButtonEl = document.querySelector(".toggleControls-icon a");
 var stopButtonEl = document.querySelector(".stop-icon");
 var exitfsButtonEl = document.querySelector(".exitfs-icon");
@@ -221,7 +222,7 @@ function createVideoElement(videoObject) {
    });
 }
 
-async function createVideos(user) {
+async function createVideos(user, f) {
    try {
       let loader = createLoader();
       userStatusEl.appendChild(loader);
@@ -237,6 +238,9 @@ async function createVideos(user) {
 
       loader.remove();
       videoMainEl.classList.remove("loading");
+
+      // function parameter to be executed after loading videos is completed
+      f();
    } catch {
       console.error("Failed to load video.");
    }
@@ -330,8 +334,8 @@ function mobileScroll(videos, scrollStart, scrollStop) {
 }
 
 function writeInfo() {
-   const videoIndex = getNearestVideoIndex();
-   const videoData = user.videos[videoIndex];
+   const videoID = getNearestVideo().getAttribute("data-id");
+   const videoData = user.videos.filter((v) => v.id === videoID)[0];
 
    const titleEl = document.querySelector(".video-info .info-title");
    const uploadDateEl = document.querySelector(".video-info .info-upload-date");
@@ -382,8 +386,9 @@ function writeInfo() {
 
    if (
       videoData?.title === undefined ||
-      videoData.title === videoData?.description ||
-      videoData?.title === ""
+      videoData?.title === videoData?.description ||
+      videoData?.title === "" ||
+      videoData?.title.trim().startsWith("TikTok video #")
    ) {
       titleEl.style.display = "none";
    } else {
@@ -447,15 +452,24 @@ function toggleControls(forceBool) {
    if (toggleControlsButtonEl.title === "Show Controls" || forceBool === true) {
       controlsEl.classList.remove("hidden");
       toggleControlsButtonEl.title = "Hide Controls";
-      toggleControlsButtonEl.textContent = "expand_less";
+      toggleControlsButtonEl.textContent = "tune expand_less";
    } else if (
       toggleControlsButtonEl.title === "Hide Controls" ||
       forceBool === false
    ) {
       controlsEl.classList.add("hidden");
       toggleControlsButtonEl.title = "Show Controls";
-      toggleControlsButtonEl.textContent = "expand_more";
+      toggleControlsButtonEl.textContent = "tune expand_more";
    }
+}
+
+function dateSort() {
+   var videos = [...videoMainEl.children];
+   var scroll = videoMainEl.scrollTop;
+   videos.reverse();
+   videoMainEl.innerHTML = "";
+   videoMainEl.append(...videos);
+   videoMainEl.scroll({ top: scroll, behavior: "auto" });
 }
 
 function keyHandler(event) {
@@ -521,6 +535,9 @@ function controlsHandler(event) {
          break;
       case "Go To Bottom":
          scrollVideo(videoMainEl.lastElementChild);
+         break;
+      case "Sort By Date":
+         dateSort();
          break;
       default:
          return;
@@ -697,7 +714,9 @@ window.addEventListener("DOMContentLoaded", () => {
          });
 
          // Create Video Elements from user.videos array
-         createVideos(user);
+         createVideos(user, () => {
+            dateSortButtonEl.classList.remove("hidden");
+         });
       })
       .catch((err) => {
          throw err;

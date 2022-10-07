@@ -7,8 +7,6 @@ var touchStartY;
 var touchEndY;
 var loading;
 var scrollTimeout;
-var s_Favorites;
-var s_Hidden;
 var s_Muted;
 var s_ShowControls;
 
@@ -29,16 +27,6 @@ var exitfsButtonEl = document.querySelector(".exitfs-icon");
 var infoButtonEl = document.querySelector(".info-icon");
 
 // Local Storage getters and setters
-function getFavorites() {
-   let favorites = JSON.parse(window.localStorage.getItem("favorites"));
-   return favorites;
-}
-
-function getHidden() {
-   let hidden = JSON.parse(window.localStorage.getItem("hidden"));
-   return hidden;
-}
-
 function getMuted() {
    let muted = JSON.parse(window.localStorage.getItem("muted"));
    return muted;
@@ -151,22 +139,22 @@ function toggleFullscreen() {
    }
 }
 
-function toggleHidden(videoEl, id) {
-   let hidden = getHidden();
+// function toggleHidden(videoEl, id) {
+//    let hidden = getHidden();
 
-   if (videoEl) {
-      if (hidden.filter((hidden) => hidden.id == id))
-         videoEl.classList.toggle("hidden");
-      return;
-   } else {
-      let videos = document.getElementsByClassName("video-post");
-      for (let i = 0; i < videos.length; i++) {
-         hidden
-            .filter((hidden) => hidden.id == videos[i].getAttribute("data-id"))
-            .forEach(() => videos[i].classList.toggle("hidden"));
-      }
-   }
-}
+//    if (videoEl) {
+//       if (hidden.filter((hidden) => hidden.id == id))
+//          videoEl.classList.toggle("hidden");
+//       return;
+//    } else {
+//       let videos = document.getElementsByClassName("video-post");
+//       for (let i = 0; i < videos.length; i++) {
+//          hidden
+//             .filter((hidden) => hidden.id == videos[i].getAttribute("data-id"))
+//             .forEach(() => videos[i].classList.toggle("hidden"));
+//       }
+//    }
+// }
 
 function createLoader() {
    let loader = document.createElement("h3");
@@ -184,13 +172,7 @@ function createVideoElement(videoObject) {
       let videoEl = document.createElement("video");
       videoEl.className = "video-post";
 
-      // Check favorites and hidden, add classes
-      // toggleHidden(videoEl, videoObject.id);
       let muted = getMuted();
-      let favorites = getFavorites();
-      if (favorites && favorites.filter((fave) => fave.id === videoObject.id)) {
-         videoEl.classList.add("favorite");
-      }
 
       videoEl.setAttribute("preload", "metadata");
       videoEl.setAttribute("poster", thumbnailURL);
@@ -309,28 +291,6 @@ function scrollVideo(videoEl, behavior, block) {
 function isMobile() {
    if (window.innerWidth < MOBILE_BREAK) return true;
    else return false;
-}
-
-function mobileScroll(videos, scrollStart, scrollStop) {
-   let nearestVideo = getNearestVideo(videos);
-
-   if (!isMobile()) {
-      return;
-   }
-
-   if (scrollStart && scrollStop) {
-      let scrollDiff = scrollStop - scrollStart;
-
-      if (scrollDiff === 0) return;
-      else if (scrollDiff > 0) {
-         nearestVideo = nearestVideo.nextElementSibling;
-      } else if (scrollDiff < 0) {
-         nearestVideo = nearestVideo.previousElementSibling;
-      }
-
-      scrollVideo(nearestVideo);
-      if (nearestVideo.paused) setTimeout(() => togglePlay(nearestVideo), 100);
-   }
 }
 
 function writeInfo() {
@@ -633,15 +593,6 @@ function scrollHandler() {
    } else return;
 }
 
-function touchHandler(event) {
-   if (event.type === "touchstart") {
-      touchStartY = videoMainEl.scrollTop;
-   } else if (event.type === "touchend") {
-      touchEndY = videoMainEl.scrollTop;
-      mobileScroll(videoMainEl.children, touchStartY, touchEndY);
-   }
-}
-
 function mouseoverHandler(event) {
    if (isFullscreen()) return;
    if (event.target.tagName !== "VIDEO") return;
@@ -680,9 +631,6 @@ videoMainEl.addEventListener("mouseout", mouseoutHandler);
 videoMainEl.addEventListener("mouseover", mouseoverHandler);
 videoMainEl.addEventListener("click", clickHandler);
 videoMainEl.addEventListener("scroll", scrollHandler);
-// videoMainEl.addEventListener("touchstart", touchHandler);
-// videoMainEl.addEventListener("touchend", touchHandler);
-// videoMainEl.addEventListener("mouseover", mouseoverHandler);
 
 document.addEventListener("keydown", keyHandler);
 
@@ -722,8 +670,6 @@ window.addEventListener("DOMContentLoaded", () => {
          throw err;
       });
 
-   s_Favorites = getFavorites();
-   s_Hidden = getHidden();
    s_Muted = getMuted();
    s_ShowControls = getShowControls();
 
@@ -739,6 +685,3 @@ window.addEventListener("DOMContentLoaded", () => {
       muteButtonEl.textContent = "volume_up";
    }
 });
-
-// Load videos after initial content is rendered
-window.addEventListener("load", () => {});
